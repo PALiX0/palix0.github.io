@@ -30,7 +30,7 @@
         const csvFolder = "../csv/Ch_W05/Ev_01/"; // Updated path to the folder
 
         // Function to list and filter CSV files
-        async function listCSVFiles() {
+   /*     async function listCSVFiles() {
             const response = await fetch(csvFolder);
             const text = await response.text();
             const parser = new DOMParser();
@@ -42,7 +42,12 @@
             // Update debug info with the number of files found
             document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
             return files;
-        }
+        } */
+        async function listCSVFiles() {
+    const files = ["../csv/Ch_W05/Ev_01/wrc2023_event_3HCE7Si1K8JX89Sci_stage1_leaderboard_results.csv"];
+    document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
+    return files;
+}
 
         // Function to convert time in HH:MM:SS format to seconds
         function timeToSeconds(timeStr) {
