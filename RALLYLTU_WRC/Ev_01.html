@@ -36,7 +36,7 @@
             const doc = parser.parseFromString(text, "text/html");
             const files = Array.from(doc.querySelectorAll("a"))
                 .map(link => link.href)
-                .filter(file => file.match(/stage\d+_leaderboard_results\.csv$/)); // Match files ending with the desired pattern
+                .filter(file => file.match(/.*_stage\d+_leaderboard_results\.csv$/)); // Updated regex
             return files;
         }
 
