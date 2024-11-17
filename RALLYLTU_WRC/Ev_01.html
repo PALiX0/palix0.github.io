@@ -9,7 +9,8 @@
 <body>
     <div class="container my-4">
         <h1>Overall Standings for Ev_01</h1>
-        <p>This page dynamically calculates the overall standings from available stage results CSV files in the <code>csv/</code> folder.</p>
+        <p>This page dynamically calculates the overall standings from available stage results CSV files in the <code>csv/Ch_W05/Ev_01/</code> folder.</p>
+        <p id="debugInfo" style="color: red;">Found 0 CSV files.</p> <!-- Debug line -->
         <table id="standingsTable" class="table table-striped">
             <thead>
                 <tr>
@@ -26,7 +27,7 @@
         </table>
     </div>
     <script>
-        const csvFolder = "csv/Ch_W05/Ev_01/"; // Path to the folder containing CSV files
+        const csvFolder = "csv/Ch_W05/Ev_01/"; // Updated path to the folder
 
         // Function to list and filter CSV files
         async function listCSVFiles() {
@@ -36,7 +37,10 @@
             const doc = parser.parseFromString(text, "text/html");
             const files = Array.from(doc.querySelectorAll("a"))
                 .map(link => link.href)
-                .filter(file => file.match(/.*_stage\d+_leaderboard_results\.csv$/)); // Updated regex
+                .filter(file => file.match(/.*_stage\d+_leaderboard_results\.csv$/)); // Match files ending with the desired pattern
+            
+            // Update debug info with the number of files found
+            document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
             return files;
         }
 
