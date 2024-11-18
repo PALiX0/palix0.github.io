@@ -73,14 +73,27 @@
         }    
 
 function parseTimeToSeconds(time) {
+    // Ensure time is a valid string
+    if (!time || typeof time !== "string") {
+        console.warn(`Invalid time value: "${time}"`);
+        return 0; // Default to 0 seconds if time is invalid
+    }
+
     // Split the time string into hours, minutes, and seconds
-    const [hh, mm, ss] = time.split(":");
-    const [seconds, milliseconds = 0] = ss.split(".");
+    const [hh, mm, ssWithMs] = time.split(":");
+    if (!hh || !mm || !ssWithMs) {
+        console.warn(`Unexpected time format: "${time}"`);
+        return 0; // Default to 0 seconds if time format is incorrect
+    }
+
+    // Split seconds and milliseconds (if present)
+    const [ss, ms = "0"] = ssWithMs.split(".");
+
     return (
-        parseInt(hh, 10) * 3600 +
-        parseInt(mm, 10) * 60 +
-        parseInt(seconds, 10) +
-        parseFloat(`0.${milliseconds}`)
+        parseInt(hh, 10) * 3600 + // Hours to seconds
+        parseInt(mm, 10) * 60 +  // Minutes to seconds
+        parseInt(ss, 10) +       // Seconds
+        parseFloat(`0.${ms}`)    // Milliseconds
     );
 }
 
