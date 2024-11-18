@@ -72,54 +72,78 @@
             }
         }    
 
-    async function generateStandings() {
-        const files = await listCSVFiles();
-        const standings = {};
+function parseTimeToSeconds(time) {
+    // Split the time string into hours, minutes, and seconds
+    const [hh, mm, ss] = time.split(":");
+    const [seconds, milliseconds = 0] = ss.split(".");
+    return (
+        parseInt(hh, 10) * 3600 +
+        parseInt(mm, 10) * 60 +
+        parseInt(seconds, 10) +
+        parseFloat(`0.${milliseconds}`)
+    );
+}
 
-        for (const file of files) {
-            const stageResults = await fetchCSV(file);
-            stageResults.forEach(({ position, driver, time }) => {
-                const totalSeconds = time.split(":").reduce((acc, val) => acc * 60 + parseFloat(val), 0);
-                if (!standings[driver]) {
-                    standings[driver] = {
-                        totalTime: 0,
-                        stagesCompleted: 0,
-                        bestStageRank: Infinity,
-                        worstStageRank: -Infinity
-                    };
-                }
-                const driverData = standings[driver];
-                driverData.totalTime += totalSeconds;
-                driverData.stagesCompleted += 1;
-                driverData.bestStageRank = Math.min(driverData.bestStageRank, position);
-                driverData.worstStageRank = Math.max(driverData.worstStageRank, position);
-            });
-        }
+function formatSecondsToTime(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = (totalSeconds % 60).toFixed(3); // Preserve milliseconds
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
+}
 
-        const sortedStandings = Object.entries(standings)
-            .sort(([, a], [, b]) => a.totalTime - b.totalTime)
-            .map(([driver, data], index) => ({
-                position: index + 1,
-                driver,
-                totalTime: new Date(data.totalTime * 1000).toISOString().substr(11, 8),
-                stagesCompleted: data.stagesCompleted,
-                bestStageRank: data.bestStageRank,
-                worstStageRank: data.worstStageRank
-            }));
+async function generateStandings() {
+    const files = await listCSVFiles();
+    const standings = {};
 
-        const tbody = document.querySelector("#standings tbody");
-        sortedStandings.forEach(({ position, driver, totalTime, stagesCompleted, bestStageRank, worstStageRank }) => {
-            const row = `<tr>
-                <td>${position}</td>
-                <td>${driver}</td>
-                <td>${totalTime}</td>
-                <td>${stagesCompleted}</td>
-                <td>${bestStageRank}</td>
-                <td>${worstStageRank}</td>
-            </tr>`;
-            tbody.innerHTML += row;
+    for (const file of files) {
+        const stageResults = await fetchCSV(file);
+        stageResults.forEach(({ position, driver, time }) => {
+            // Parse the time to seconds
+            const totalSeconds = parseTimeToSeconds(time);
+
+            // Initialize standings for the driver
+            if (!standings[driver]) {
+                standings[driver] = {
+                    totalTime: 0,
+                    stagesCompleted: 0,
+                    bestStageRank: Infinity,
+                    worstStageRank: -Infinity
+                };
+            }
+
+            const driverData = standings[driver];
+            driverData.totalTime += totalSeconds;
+            driverData.stagesCompleted += 1;
+            driverData.bestStageRank = Math.min(driverData.bestStageRank, position);
+            driverData.worstStageRank = Math.max(driverData.worstStageRank, position);
         });
     }
+
+    const sortedStandings = Object.entries(standings)
+        .sort(([, a], [, b]) => a.totalTime - b.totalTime)
+        .map(([driver, data], index) => ({
+            position: index + 1,
+            driver,
+            totalTime: formatSecondsToTime(data.totalTime),
+            stagesCompleted: data.stagesCompleted,
+            bestStageRank: data.bestStageRank,
+            worstStageRank: data.worstStageRank
+        }));
+
+    const tbody = document.querySelector("#standings tbody");
+    tbody.innerHTML = ""; // Clear any existing rows
+    sortedStandings.forEach(({ position, driver, totalTime, stagesCompleted, bestStageRank, worstStageRank }) => {
+        const row = `<tr>
+            <td>${position}</td>
+            <td>${driver}</td>
+            <td>${totalTime}</td>
+            <td>${stagesCompleted}</td>
+            <td>${bestStageRank}</td>
+            <td>${worstStageRank}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
 
     // Wrap in an async function
     async function main() {
