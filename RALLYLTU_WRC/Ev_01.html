@@ -58,19 +58,19 @@
 
     async function listCSVFiles() {
         try {
-            const response = await fetch("../csv/Ch_W05/Ev_01/file_list.json");
+            const response = await fetch("/RALLYLTU_WRC/csv/Ch_W05/Ev_01/file_list.json");
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             const files = await response.json();
             document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
-            return files.map(file => `../csv/Ch_W05/Ev_01/${file}`);
+            return files.map(file => `/RALLYLTU_WRC/csv/Ch_W05/Ev_01/${file}`);
         } catch (error) {
             document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
             console.error("Error loading file_list.json:", error);
             return [];
-        }
-    }
+            }
+        }    
 
     async function generateStandings() {
         const files = await listCSVFiles();
