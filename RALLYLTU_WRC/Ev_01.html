@@ -38,95 +38,95 @@
     </table>
 
     <script>
-        async function fetchCSV(url) {
-            const response = await fetch(url);
+    async function fetchCSV(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Failed to load CSV: ${url}`);
+            return [];
+        }
+        const text = await response.text();
+        return parseCSV(text);
+    }
+
+    function parseCSV(data) {
+        const rows = data.split("\n").slice(1); // Skip header row
+        return rows.map(row => {
+            const [position, driver, time] = row.split(",").map(cell => cell.trim());
+            return { position: parseInt(position), driver, time };
+        }).filter(row => row.driver && row.time); // Filter out empty rows
+    }
+
+    async function listCSVFiles() {
+        try {
+            const response = await fetch("../csv/Ch_W05/Ev_01/file_list.json");
             if (!response.ok) {
-                console.error(`Failed to load CSV: ${url}`);
-                return [];
+                throw new Error(`HTTP error! Status: ${response.status}`);
             }
-            const text = await response.text();
-            return parseCSV(text);
-        }
-
-        function parseCSV(data) {
-            const rows = data.split("\n").slice(1); // Skip header row
-            return rows.map(row => {
-                const [position, driver, time] = row.split(",").map(cell => cell.trim());
-                return { position: parseInt(position), driver, time };
-            }).filter(row => row.driver && row.time); // Filter out empty rows
-        }
-
-        async function listCSVFiles() {
-            try {
-                const response = await fetch("../csv/Ch_W05/Ev_01/file_list.json");
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                const files = await response.json();
-                document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
-                return files.map(file => `../csv/Ch_W05/Ev_01/${file}`);
-            } catch (error) {
-                document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
-                console.error("Error loading file_list.json:", error);
-                return [];
-            }
-        }
-
             const files = await response.json();
             document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
             return files.map(file => `../csv/Ch_W05/Ev_01/${file}`);
+        } catch (error) {
+            document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
+            console.error("Error loading file_list.json:", error);
+            return [];
         }
+    }
 
-        async function generateStandings() {
-            const files = await listCSVFiles();
-            const standings = {};
+    async function generateStandings() {
+        const files = await listCSVFiles();
+        const standings = {};
 
-            for (const file of files) {
-                const stageResults = await fetchCSV(file);
-                stageResults.forEach(({ position, driver, time }) => {
-                    const totalSeconds = time.split(":").reduce((acc, val) => acc * 60 + parseFloat(val), 0);
-                    if (!standings[driver]) {
-                        standings[driver] = {
-                            totalTime: 0,
-                            stagesCompleted: 0,
-                            bestStageRank: Infinity,
-                            worstStageRank: -Infinity
-                        };
-                    }
-                    const driverData = standings[driver];
-                    driverData.totalTime += totalSeconds;
-                    driverData.stagesCompleted += 1;
-                    driverData.bestStageRank = Math.min(driverData.bestStageRank, position);
-                    driverData.worstStageRank = Math.max(driverData.worstStageRank, position);
-                });
-            }
-
-            const sortedStandings = Object.entries(standings)
-                .sort(([, a], [, b]) => a.totalTime - b.totalTime)
-                .map(([driver, data], index) => ({
-                    position: index + 1,
-                    driver,
-                    totalTime: new Date(data.totalTime * 1000).toISOString().substr(11, 8),
-                    stagesCompleted: data.stagesCompleted,
-                    bestStageRank: data.bestStageRank,
-                    worstStageRank: data.worstStageRank
-                }));
-
-            const tbody = document.querySelector("#standings tbody");
-            sortedStandings.forEach(({ position, driver, totalTime, stagesCompleted, bestStageRank, worstStageRank }) => {
-                const row = `<tr>
-                    <td>${position}</td>
-                    <td>${driver}</td>
-                    <td>${totalTime}</td>
-                    <td>${stagesCompleted}</td>
-                    <td>${bestStageRank}</td>
-                    <td>${worstStageRank}</td>
-                </tr>`;
-                tbody.innerHTML += row;
+        for (const file of files) {
+            const stageResults = await fetchCSV(file);
+            stageResults.forEach(({ position, driver, time }) => {
+                const totalSeconds = time.split(":").reduce((acc, val) => acc * 60 + parseFloat(val), 0);
+                if (!standings[driver]) {
+                    standings[driver] = {
+                        totalTime: 0,
+                        stagesCompleted: 0,
+                        bestStageRank: Infinity,
+                        worstStageRank: -Infinity
+                    };
+                }
+                const driverData = standings[driver];
+                driverData.totalTime += totalSeconds;
+                driverData.stagesCompleted += 1;
+                driverData.bestStageRank = Math.min(driverData.bestStageRank, position);
+                driverData.worstStageRank = Math.max(driverData.worstStageRank, position);
             });
         }
 
-        generateStandings();
-    </script>
+        const sortedStandings = Object.entries(standings)
+            .sort(([, a], [, b]) => a.totalTime - b.totalTime)
+            .map(([driver, data], index) => ({
+                position: index + 1,
+                driver,
+                totalTime: new Date(data.totalTime * 1000).toISOString().substr(11, 8),
+                stagesCompleted: data.stagesCompleted,
+                bestStageRank: data.bestStageRank,
+                worstStageRank: data.worstStageRank
+            }));
+
+        const tbody = document.querySelector("#standings tbody");
+        sortedStandings.forEach(({ position, driver, totalTime, stagesCompleted, bestStageRank, worstStageRank }) => {
+            const row = `<tr>
+                <td>${position}</td>
+                <td>${driver}</td>
+                <td>${totalTime}</td>
+                <td>${stagesCompleted}</td>
+                <td>${bestStageRank}</td>
+                <td>${worstStageRank}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // Wrap in an async function
+    async function main() {
+        await generateStandings();
+    }
+
+    main(); // Call the async function
+</script>
 </body>
 </html>
