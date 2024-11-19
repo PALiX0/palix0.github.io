@@ -146,18 +146,32 @@
 
             // Sort standings by total time
             const sortedStandings = Object.entries(standings)
-                .sort(([, a], [, b]) => (a.dnf ? Infinity : a.totalTime + a.penaltyTime) - (b.dnf ? Infinity : b.totalTime + b.penaltyTime))
+                .sort(([, a], [, b]) => 
+                    (a.dnf ? Infinity : a.totalTime + a.penaltyTime) - (b.dnf ? Infinity : b.totalTime + b.penaltyTime)
+                )
                 .map(([driver, data], index) => ({
                     position: data.dnf ? "-" : index + 1,
                     driver,
                     totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
-                    timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - sortedStandings[0][1].totalTime),
-                    totalPenalty: data.penaltyTime,
+                    totalPenalty: formatSecondsToTime(data.penaltyTime),
                     stagesCompleted: data.stagesCompleted,
                     platform: data.platform,
                     dnf: data.dnf ? "DNF" : "",
                     eventPoints: pointsMap[index + 1] || 0,
+                    rawTotalTime: data.totalTime, // Keep raw times for later use
+                    rawPenaltyTime: data.penaltyTime // Keep penalty time for later use
                 }));
+            
+            // Add timeDiff in a second pass
+            const baseTime = sortedStandings.find(entry => entry.position !== "-")?.rawTotalTime || 0;
+            
+            sortedStandings.forEach(entry => {
+                if (entry.position !== "-") {
+                    entry.timeDiff = formatSecondsToTime(entry.rawTotalTime - baseTime);
+                } else {
+                    entry.timeDiff = "-";
+                }
+            });
 
             const lastStagePowerPoints = lastStageResults.slice(0, 5).map((result, i) => ({
                 driver: result.driver,
