@@ -101,7 +101,7 @@
         }
 
         async function fetchPoints() {
-            const pointsData = await fetchCSV("/RALLYLTU_WRC/points/points_top20.csv");
+            const pointsData = await fetchCSV("/points/points_top20.csv");
             return pointsData.split("\n").reduce((pointsMap, row) => {
                 const [position, points] = row.split(",").map(Number);
                 pointsMap[position] = points;
