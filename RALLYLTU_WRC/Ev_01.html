@@ -25,12 +25,16 @@
     <table id="standings">
         <thead>
             <tr>
+                <th>Power Stage Points</th>
+                <th>Event Points</th>
                 <th>Position</th>
                 <th>Driver</th>
                 <th>Total Time</th>
+                <th>Time Difference to First</th>
+                <th>Total Time Penalty</th>
+                <th>DNF</th>
                 <th>Stages Completed</th>
-                <th>Best Stage Rank</th>
-                <th>Worst Stage Rank</th>
+                <th>Platform</th>
             </tr>
         </thead>
         <tbody>
@@ -38,152 +42,144 @@
     </table>
 
     <script>
-    async function fetchCSV(url) {
-        const response = await fetch(url);
-        if (!response.ok) {
-            console.error(`Failed to load CSV: ${url}`);
-            return [];
-        }
-        const text = await response.text();
-        return parseCSV(text);
-    }
-
-    function parseCSV(data) {
-        const rows = data.split("\n").map(row => row.trim()).filter(row => row !== "");
-        const headers = rows[0].split(",").map(header => header.trim()); // Extract headers
-        const dataRows = rows.slice(1); // Skip the header row
-    
-        // Identify indices dynamically based on headers
-        const rankIndex = headers.indexOf("Rank");
-        const driverIndex = headers.indexOf("DisplayName");
-        const timeIndex = headers.indexOf("Time");
-        const vehicleIndex = headers.indexOf("Vehicle");
-    
-        if (rankIndex === -1 || driverIndex === -1 || timeIndex === -1) {
-            console.error("Required columns are missing from the CSV file.");
-            return [];
-        }
-    
-        // Parse the rows using identified indices
-        return dataRows.map(row => {
-            const cells = row.split(",").map(cell => cell.trim());
-            return {
-                rank: parseInt(cells[rankIndex], 10),
-                driver: cells[driverIndex],
-                time: cells[timeIndex],
-                vehicle: cells[vehicleIndex] || "Unknown" // Fallback if Vehicle column is missing
-            };
-        }).filter(row => row.rank && row.driver && row.time); // Filter out invalid rows
-    }
-
-    async function listCSVFiles() {
-        try {
-            const response = await fetch("/RALLYLTU_WRC/csv/Ch_W05/Ev_01/file_list.json");
+        async function fetchCSV(url) {
+            const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                console.error(`Failed to load CSV: ${url}`);
+                return [];
             }
-            const files = await response.json();
-            document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
-            return files.map(file => `/RALLYLTU_WRC/csv/Ch_W05/Ev_01/${file}`);
-        } catch (error) {
-            document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
-            console.error("Error loading file_list.json:", error);
-            return [];
-            }
-        }    
+            const text = await response.text();
+            return parseCSV(text);
+        }
 
-function parseTimeToSeconds(time) {
-    // Ensure time is a valid string
-    if (!time || typeof time !== "string") {
-        console.warn(`Invalid time value: "${time}"`);
-        return 0; // Default to 0 seconds if time is invalid
-    }
+        function parseCSV(data) {
+            const rows = data.split("\n").map(row => row.trim()).filter(row => row !== "");
+            const headers = rows[0].split(",").map(header => header.trim());
+            const dataRows = rows.slice(1);
 
-    // Split the time string into hours, minutes, and seconds
-    const [hh, mm, ssWithMs] = time.split(":");
-    if (!hh || !mm || !ssWithMs) {
-        console.warn(`Unexpected time format: "${time}"`);
-        return 0; // Default to 0 seconds if time format is incorrect
-    }
+            // Dynamic index mapping
+            const rankIndex = headers.indexOf("Rank");
+            const driverIndex = headers.indexOf("DisplayName");
+            const timeIndex = headers.indexOf("Time");
+            const penaltyIndex = headers.indexOf("TimePenalty");
+            const platformIndex = headers.indexOf("Platform");
 
-    // Split seconds and milliseconds (if present)
-    const [ss, ms = "0"] = ssWithMs.split(".");
-
-    return (
-        parseInt(hh, 10) * 3600 + // Hours to seconds
-        parseInt(mm, 10) * 60 +  // Minutes to seconds
-        parseInt(ss, 10) +       // Seconds
-        parseFloat(`0.${ms}`)    // Milliseconds
-    );
-}
-
-function formatSecondsToTime(totalSeconds) {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // Preserve milliseconds
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
-}
-
-async function generateStandings() {
-    const files = await listCSVFiles();
-    const standings = {};
-
-    for (const file of files) {
-        const stageResults = await fetchCSV(file);
-        stageResults.forEach(({ position, driver, time }) => {
-            // Parse the time to seconds
-            const totalSeconds = parseTimeToSeconds(time);
-
-            // Initialize standings for the driver
-            if (!standings[driver]) {
-                standings[driver] = {
-                    totalTime: 0,
-                    stagesCompleted: 0,
-                    bestStageRank: Infinity,
-                    worstStageRank: -Infinity
+            return dataRows.map(row => {
+                const cells = row.split(",").map(cell => cell.trim());
+                return {
+                    rank: parseInt(cells[rankIndex], 10),
+                    driver: cells[driverIndex],
+                    time: cells[timeIndex],
+                    penalty: parseTimeToSeconds(cells[penaltyIndex] || "00:00:00"),
+                    platform: cells[platformIndex],
                 };
+            });
+        }
+
+        async function fetchPoints() {
+            const response = await fetch("/RALLYLTU_WRC/points/points_top20.csv");
+            if (!response.ok) {
+                console.error(`Failed to load points CSV.`);
+                return {};
+            }
+            const text = await response.text();
+            const rows = text.split("\n").map(row => row.trim()).filter(row => row !== "");
+            return rows.reduce((pointsMap, row) => {
+                const [position, points] = row.split(",").map(Number);
+                pointsMap[position] = points;
+                return pointsMap;
+            }, {});
+        }
+
+        function parseTimeToSeconds(time) {
+            const [hh, mm, ssWithMs] = time.split(":");
+            const [ss, ms = "0"] = ssWithMs.split(".");
+            return (
+                parseInt(hh, 10) * 3600 +
+                parseInt(mm, 10) * 60 +
+                parseInt(ss, 10) +
+                parseFloat(`0.${ms}`)
+            );
+        }
+
+        function formatSecondsToTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = (totalSeconds % 60).toFixed(3);
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
+        }
+
+        async function generateStandings() {
+            const files = await listCSVFiles();
+            const pointsMap = await fetchPoints();
+            const standings = {};
+            let lastStageResults = [];
+
+            for (const [index, file] of files.entries()) {
+                const stageResults = await fetchCSV(file);
+                if (index === files.length - 1) lastStageResults = stageResults;
+
+                stageResults.forEach(({ rank, driver, time, penalty, platform }) => {
+                    const totalSeconds = parseTimeToSeconds(time);
+                    const player = standings[driver] || {
+                        totalTime: 0,
+                        penaltyTime: 0,
+                        stagesCompleted: 0,
+                        platform,
+                        dnf: false,
+                    };
+                    player.totalTime += totalSeconds;
+                    player.penaltyTime += penalty;
+                    player.stagesCompleted += 1;
+                    player.dnf = time === "08:00:00" || time === "16:00:00" || time === "25:00:00";
+                    standings[driver] = player;
+                });
             }
 
-            const driverData = standings[driver];
-            driverData.totalTime += totalSeconds;
-            driverData.stagesCompleted += 1;
-            driverData.bestStageRank = Math.min(driverData.bestStageRank, position);
-            driverData.worstStageRank = Math.max(driverData.worstStageRank, position);
-        });
-    }
+            // Sort standings by total time
+            const sortedStandings = Object.entries(standings)
+                .sort(([, a], [, b]) => (a.dnf ? Infinity : a.totalTime + a.penaltyTime) - (b.dnf ? Infinity : b.totalTime + b.penaltyTime))
+                .map(([driver, data], index) => ({
+                    position: data.dnf ? "-" : index + 1,
+                    driver,
+                    totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
+                    timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - sortedStandings[0][1].totalTime),
+                    totalPenalty: data.penaltyTime,
+                    stagesCompleted: data.stagesCompleted,
+                    platform: data.platform,
+                    dnf: data.dnf ? "DNF" : "",
+                    eventPoints: pointsMap[index + 1] || 0,
+                }));
 
-    const sortedStandings = Object.entries(standings)
-        .sort(([, a], [, b]) => a.totalTime - b.totalTime)
-        .map(([driver, data], index) => ({
-            position: index + 1,
-            driver,
-            totalTime: formatSecondsToTime(data.totalTime),
-            stagesCompleted: data.stagesCompleted,
-            bestStageRank: data.bestStageRank,
-            worstStageRank: data.worstStageRank
-        }));
+            const lastStagePowerPoints = lastStageResults.slice(0, 5).map((result, i) => ({
+                driver: result.driver,
+                powerStagePoints: 5 - i,
+            }));
 
-    const tbody = document.querySelector("#standings tbody");
-    tbody.innerHTML = ""; // Clear any existing rows
-    sortedStandings.forEach(({ position, driver, totalTime, stagesCompleted, bestStageRank, worstStageRank }) => {
-        const row = `<tr>
-            <td>${position}</td>
-            <td>${driver}</td>
-            <td>${totalTime}</td>
-            <td>${stagesCompleted}</td>
-            <td>${bestStageRank}</td>
-            <td>${worstStageRank}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-    });
-}
+            const tbody = document.querySelector("#standings tbody");
+            tbody.innerHTML = "";
+            sortedStandings.forEach(({ powerStagePoints, eventPoints, position, driver, totalTime, timeDiff, totalPenalty, dnf, stagesCompleted, platform }) => {
+                const row = `<tr>
+                    <td>${powerStagePoints || 0}</td>
+                    <td>${eventPoints}</td>
+                    <td>${position}</td>
+                    <td>${driver}</td>
+                    <td>${totalTime}</td>
+                    <td>${timeDiff}</td>
+                    <td>${totalPenalty}</td>
+                    <td>${dnf}</td>
+                    <td>${stagesCompleted}</td>
+                    <td>${platform}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
 
-    // Wrap in an async function
-    async function main() {
-        await generateStandings();
-    }
+        async function main() {
+            await generateStandings();
+        }
 
-    main(); // Call the async function
-</script>
+        main();
+    </script>
 </body>
 </html>
