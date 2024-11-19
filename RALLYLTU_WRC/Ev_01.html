@@ -119,91 +119,81 @@
             return fileList.map(file => `/RALLYLTU_WRC/csv/Ch_W05/Ev_01/${file}`);
         }
 
-        async function generateStandings() {
-            const bannedPlayers = await fetchBannedPlayers();
-            const files = await listCSVFiles();
-            const pointsMap = await fetchPoints();
-            const standings = {};
-            let lastStageResults = [];
+async function generateStandings() {
+  const bannedPlayers = await fetchBannedPlayers();
+  const files = await listCSVFiles();
+  const pointsMap = await fetchPoints();
+  const standings = {};
+  let lastStageResults = [];
 
-            for (const [index, file] of files.entries()) {
-                const csvData = await fetchCSV(file);
-                const stageResults = parseCSV(csvData);
+  for (const [index, file] of files.entries()) {
+    const csvData = await fetchCSV(file);
+    const stageResults = parseCSV(csvData);
 
-                if (index === files.length - 1) lastStageResults = stageResults;
+    if (index === files.length - 1) lastStageResults = stageResults;
 
-                stageResults.forEach(({ rank, driver, time, penalty, platform }) => {
-                    const totalSeconds = parseTimeToSeconds(time);
+    stageResults.forEach(({ rank, driver, time, penalty, platform }) => {
+      const totalSeconds = parseTimeToSeconds(time);
 
-                    const player = standings[driver] || {
-                        totalTime: 0,
-                        penaltyTime: 0,
-                        stagesCompleted: 0,
-                        platform,
-                        dnf: false,
-                    };
-                    player.totalTime += totalSeconds;
-                    player.penaltyTime += penalty;
-                    player.stagesCompleted += 1;
-                    player.dnf = time === "08:00:00" || time === "16:00:00" || time === "25:00:00";
-                    standings[driver] = player;
-                });
-            }
+      const player = standings[driver] || {
+        totalTime: 0,
+        penaltyTime: 0,
+        stagesCompleted: 0,
+        platform,
+        dnf: false,
+      };
+      player.totalTime += totalSeconds;
+      player.penaltyTime += penalty;
+      player.stagesCompleted += 1;
+      player.dnf = time === "08:00:00" || time === "16:00:00" || time === "25:00:00";
+      standings[driver] = player;
+    });
+  }
 
-            // Sort standings by total time
-            const sortedStandings = Object.entries(standings)
-                .sort(([, a], [, b]) => 
-                    (a.dnf ? Infinity : a.totalTime + a.penaltyTime) - (b.dnf ? Infinity : b.totalTime + b.penaltyTime)
-                )
-                .map(([driver, data], index) => ({
-                    position: data.dnf ? "-" : index + 1,
-                    driver,
-                    totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
-                    totalPenalty: formatSecondsToTime(data.penaltyTime),
-                    stagesCompleted: data.stagesCompleted,
-                    platform: data.platform,
-                    dnf: data.dnf ? "DNF" : "",
-                    eventPoints: pointsMap[index + 1] || 0,
-                    rawTotalTime: data.totalTime, // Keep raw times for later use
-                    rawPenaltyTime: data.penaltyTime // Keep penalty time for later use
-                }));
-            
-            // Add timeDiff in a second pass
-            const baseTime = sortedStandings.find(entry => entry.position !== "-")?.rawTotalTime || 0;
-            
-            sortedStandings.forEach(entry => {
-                if (entry.position !== "-") {
-                    entry.timeDiff = formatSecondsToTime(entry.rawTotalTime - baseTime);
-                } else {
-                    entry.timeDiff = "-";
-                }
-            });
+  // Filter out banned players before sorting
+  const filteredStandings = Object.entries(standings)
+    .filter(([driver, _]) => !bannedPlayers.has(driver));
 
-            const lastStagePowerPoints = lastStageResults.slice(0, 5).map((result, i) => ({
-                driver: result.driver,
-                powerStagePoints: 5 - i,
-            }));
+  // Sort the filtered standings
+  const sortedStandings = filteredStandings.sort(([, a], [, b]) =>
+    (a.dnf ? Infinity : a.totalTime + a.penaltyTime) -
+    (b.dnf ? Infinity : b.totalTime + b.penaltyTime)
+  );
 
-            const tbody = document.querySelector("#standings tbody");
-            tbody.innerHTML = "";
-            sortedStandings.forEach(({ powerStagePoints, eventPoints, position, driver, totalTime, timeDiff, totalPenalty, dnf, stagesCompleted, platform }) => {
-               if (!bannedPlayers.has(driver)) { // Check if driver is not banned 
-                const row = `<tr>
-                    <td>${powerStagePoints || 0}</td>
-                    <td>${eventPoints}</td>
-                    <td>${position}</td>
-                    <td>${driver}</td>
-                    <td>${totalTime}</td>
-                    <td>${timeDiff}</td>
-                    <td>${totalPenalty}</td>
-                    <td>${dnf}</td>
-                    <td>${stagesCompleted}</td>
-                    <td>${platform}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-               }
-            });
-        }
+  // Calculate positions and time differences for the filtered standings
+  sortedStandings.forEach(([driver, data], index) => {
+    const position = index + 1;
+    const totalTime = data.dnf ? "DNF" : formatSecondsToTime(data.totalTime);
+    const totalPenalty = formatSecondsToTime(data.penaltyTime);
+    const baseTime = sortedStandings[0][1].totalTime; // Use the first non-banned player's time as the base
+    const timeDiff = formatSecondsToTime(data.totalTime - baseTime);
+
+    const entry = {
+      position,
+      driver,
+      totalTime,
+      totalPenalty,
+      stagesCompleted: data.stagesCompleted,
+      platform: data.platform,
+      dnf: data.dnf ? "DNF" : "",
+      eventPoints: pointsMap[position] || 0,
+      timeDiff,
+    };
+
+    const row = `<tr>
+      <td>${entry.eventPoints}</td>
+      <td>${entry.position}</td>
+      <td>${entry.driver}</td>
+      <td>${entry.totalTime}</td>
+      <td>${entry.timeDiff}</td>
+      <td>${entry.totalPenalty}</td>
+      <td>${entry.dnf}</td>
+      <td>${entry.stagesCompleted}</td>
+      <td>${entry.platform}</td>
+    </tr>`;
+    tbody.innerHTML += row;
+  });
+}
 
         async function main() {
             await generateStandings();
