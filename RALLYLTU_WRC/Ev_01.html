@@ -49,11 +49,31 @@
     }
 
     function parseCSV(data) {
-        const rows = data.split("\n").slice(1); // Skip header row
-        return rows.map(row => {
-            const [position, driver, time] = row.split(",").map(cell => cell.trim());
-            return { position: parseInt(position), driver, time };
-        }).filter(row => row.driver && row.time); // Filter out empty rows
+        const rows = data.split("\n").map(row => row.trim()).filter(row => row !== "");
+        const headers = rows[0].split(",").map(header => header.trim()); // Extract headers
+        const dataRows = rows.slice(1); // Skip the header row
+    
+        // Identify indices dynamically based on headers
+        const rankIndex = headers.indexOf("Rank");
+        const driverIndex = headers.indexOf("DisplayName");
+        const timeIndex = headers.indexOf("Time");
+        const vehicleIndex = headers.indexOf("Vehicle");
+    
+        if (rankIndex === -1 || driverIndex === -1 || timeIndex === -1) {
+            console.error("Required columns are missing from the CSV file.");
+            return [];
+        }
+    
+        // Parse the rows using identified indices
+        return dataRows.map(row => {
+            const cells = row.split(",").map(cell => cell.trim());
+            return {
+                rank: parseInt(cells[rankIndex], 10),
+                driver: cells[driverIndex],
+                time: cells[timeIndex],
+                vehicle: cells[vehicleIndex] || "Unknown" // Fallback if Vehicle column is missing
+            };
+        }).filter(row => row.rank && row.driver && row.time); // Filter out invalid rows
     }
 
     async function listCSVFiles() {
