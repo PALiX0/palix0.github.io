@@ -50,6 +50,11 @@
             return response.json();
         }
 
+        async function fetchBannedPlayers() {
+          const response = await fetchJSON("/banned_players.json");
+          return new Set(response); // Convert to Set for faster lookup
+        }
+
         async function fetchCSV(url) {
             const response = await fetch(url);
             if (!response.ok) {
@@ -115,6 +120,7 @@
         }
 
         async function generateStandings() {
+            const bannedPlayers = await fetchBannedPlayers();
             const files = await listCSVFiles();
             const pointsMap = await fetchPoints();
             const standings = {};
@@ -181,6 +187,7 @@
             const tbody = document.querySelector("#standings tbody");
             tbody.innerHTML = "";
             sortedStandings.forEach(({ powerStagePoints, eventPoints, position, driver, totalTime, timeDiff, totalPenalty, dnf, stagesCompleted, platform }) => {
+               if (!bannedPlayers.has(driver)) { // Check if driver is not banned 
                 const row = `<tr>
                     <td>${powerStagePoints || 0}</td>
                     <td>${eventPoints}</td>
@@ -194,6 +201,7 @@
                     <td>${platform}</td>
                 </tr>`;
                 tbody.innerHTML += row;
+               }
             });
         }
 
