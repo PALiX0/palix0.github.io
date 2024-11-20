@@ -190,7 +190,7 @@
                 position: index + 1,
                 driver,
                 totalTime: formatSecondsToTime(data.totalTime + data.penaltyTime),
-                timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
+                timeDiff: formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
                 totalPenalty: formatSecondsToTime(data.penaltyTime),
                 stagesCompleted: data.stagesCompleted,
                 platform: data.platform,
