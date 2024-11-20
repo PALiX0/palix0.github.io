@@ -132,45 +132,59 @@
 
                 if (index === files.length - 1) lastStageResults = stageResults;
 
-                stageResults.forEach(({ rank, driver, time, penalty, platform }) => {
-                    const totalSeconds = parseTimeToSeconds(time);
+stageResults.forEach(({ position, driver, time, platform }) => {
+    const totalSeconds = parseTimeToSeconds(time);
 
-                    const player = standings[driver] || {
-                        totalTime: 0,
-                        penaltyTime: 0,
-                        stagesCompleted: 0,
-                        platform,
-                        dnf: false,
-                    };
-                    player.totalTime += totalSeconds;
-                    player.penaltyTime += penalty;
-                    player.stagesCompleted += 1;
-                    player.dnf = time === "08:00:00" || time === "16:00:00" || time === "25:00:00";
-                    standings[driver] = player;
-                });
+    // Initialize driver data if not already present
+    if (!standings[driver]) {
+        standings[driver] = {
+            totalTime: 0,
+            penaltyTime: 0,
+            stagesCompleted: 0,
+            missedStages: 0,
+            platform,
+            dnf: false, // Default to not DNF
+        };
+    }
+
+    const driverData = standings[driver];
+
+    // Add stage time and increment completed stages
+    driverData.totalTime += totalSeconds;
+    driverData.stagesCompleted += 1;
+});
             }
+            
+// Check for missed stages and apply penalties
+for (const driver in standings) {
+    const driverData = standings[driver];
+    const missedStages = files.length - driverData.stagesCompleted;
 
-            // Filter out banned players before sorting
-              const filteredStandings = Object.entries(standings)
-                .filter(([driver, _]) => !bannedPlayers.has(driver));
+    if (missedStages > 0) {
+        driverData.penaltyTime += missedStages * 30 * 60; // Add 30 minutes per missed stage
+        driverData.dnf = true; // Mark as DNF
+    }
+}
 
-            // Sort standings by total time
-            const sortedStandings = Object.entries(standings)
-                .sort(([, a], [, b]) => 
-                    (a.dnf ? Infinity : a.totalTime + a.penaltyTime) - (b.dnf ? Infinity : b.totalTime + b.penaltyTime)
-                )
-                .map(([driver, data], index) => ({
-                    position: data.dnf ? "-" : index + 1,
-                    driver,
-                    totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
-                    totalPenalty: formatSecondsToTime(data.penaltyTime),
-                    stagesCompleted: data.stagesCompleted,
-                    platform: data.platform,
-                    dnf: data.dnf ? "DNF" : "",
-                    eventPoints: pointsMap[index + 1] || 0,
-                    rawTotalTime: data.totalTime, // Keep raw times for later use
-                    rawPenaltyTime: data.penaltyTime // Keep penalty time for later use
-                }));
+// Sort standings with DNFs at the bottom
+const sortedStandings = Object.entries(standings)
+    .sort(([, a], [, b]) => {
+        if (a.dnf && b.dnf) return 0; // Keep relative order of DNFs
+        if (a.dnf) return 1; // DNF goes to the bottom
+        if (b.dnf) return -1; // Valid goes above
+        return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
+    })
+    .map(([driver, data], index) => ({
+        position: data.dnf ? "-" : index + 1,
+        driver,
+        totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
+        timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - sortedStandings[0][1].totalTime),
+        totalPenalty: formatSecondsToTime(data.penaltyTime),
+        stagesCompleted: data.stagesCompleted,
+        platform: data.platform,
+        dnf: data.dnf ? "DNF" : "",
+        eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0, // No points for DNF
+    }));
             
             // Add timeDiff in a second pass
             const baseTime = sortedStandings.find(entry => entry.position !== "-")?.rawTotalTime || 0;
