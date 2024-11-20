@@ -135,90 +135,106 @@
             }, {});
         }
 
-        async function generateStandings() {
-            const files = await listCSVFiles();
-            const pointsMap = await fetchPointsMap();
-            const standings = {};
-            const lastStageResults = await fetchCSV(files[files.length - 1]);
-            const powerStagePoints = [5, 4, 3, 2, 1];
+async function generateStandings() {
+    const files = await listCSVFiles();
+    const pointsMap = await fetchPointsMap();
+    const standings = {};
+    const lastStageResults = await fetchCSV(files[files.length - 1]);
+    const powerStagePoints = [5, 4, 3, 2, 1];
 
-            // Process each stage file
-            for (const file of files) {
-                const stageResults = await fetchCSV(file);
-                stageResults.forEach(({ rank, driver, time, platform }) => {
-                    const totalSeconds = parseTimeToSeconds(time);
+    // Process each stage file
+    for (const file of files) {
+        const stageResults = await fetchCSV(file);
+        stageResults.forEach(({ rank, driver, time, platform }) => {
+            const totalSeconds = parseTimeToSeconds(time);
 
-                    if (!standings[driver]) {
-                        standings[driver] = {
-                            totalTime: 0,
-                            penaltyTime: 0,
-                            stagesCompleted: 0,
-                            dnf: false,
-                            platform
-                        };
-                    }
-
-                    const driverData = standings[driver];
-                    driverData.totalTime += totalSeconds;
-                    driverData.stagesCompleted += 1;
-                });
+            // Initialize driver data if not already present
+            if (!standings[driver]) {
+                standings[driver] = {
+                    totalTime: 0,
+                    penaltyTime: 0,
+                    stagesCompleted: 0,
+                    dnf: false,
+                    platform
+                };
             }
 
-            // Apply penalties for missed stages
-            const totalStages = files.length;
-            for (const driver in standings) {
-                const data = standings[driver];
-                const missedStages = totalStages - data.stagesCompleted;
-                if (missedStages > 0) {
-                    data.penaltyTime += missedStages * 1800; // 30 minutes per missed stage
-                    data.dnf = true; // Mark as DNF if any stage is missed
-                }
+            const driverData = standings[driver];
+            driverData.totalTime += totalSeconds;
+            driverData.stagesCompleted += 1;
+
+            // Check for terminal damage (times of exactly 8, 16, or 25 minutes)
+            if (["00:08:00", "00:16:00", "00:25:00"].includes(time)) {
+                driverData.dnf = true;
             }
+        });
+    }
 
-            // Sort standings with DNFs at the bottom
-            let sortedStandings = Object.entries(standings)
-                .sort(([, a], [, b]) => {
-                    if (a.dnf && b.dnf) return 0;
-                    if (a.dnf) return 1;
-                    if (b.dnf) return -1;
-                    return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
-                });
+    // Apply penalties for missed stages
+    const totalStages = files.length;
+    for (const driver in standings) {
+        const data = standings[driver];
+        const missedStages = totalStages - data.stagesCompleted;
 
-            const bestTotalTime = sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0;
-
-            sortedStandings = sortedStandings.map(([driver, data], index) => ({
-                position: index + 1,
-                driver,
-                totalTime: formatSecondsToTime(data.totalTime + data.penaltyTime),
-                timeDiff: formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
-                totalPenalty: formatSecondsToTime(data.penaltyTime),
-                stagesCompleted: data.stagesCompleted,
-                platform: data.platform,
-                dnf: data.dnf ? "DNF" : "",
-                eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0,
-                powerStagePoints: lastStageResults.find(r => r.driver === driver)?.rank <= 5
-                    ? powerStagePoints[lastStageResults.find(r => r.driver === driver).rank - 1]
-                    : 0
-            }));
-
-            const tbody = document.querySelector("#standings tbody");
-            tbody.innerHTML = "";
-            sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
-                const row = `<tr>
-                    <td>${position}</td>
-                    <td>${driver}</td>
-                    <td>${totalTime}</td>
-                    <td>${timeDiff}</td>
-                    <td>${totalPenalty}</td>
-                    <td>${stagesCompleted}</td>
-                    <td>${platform}</td>
-                    <td>${dnf}</td>
-                    <td>${eventPoints}</td>
-                    <td>${powerStagePoints}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
+        if (missedStages > 0) {
+            data.penaltyTime += missedStages * 1800; // 30 minutes per missed stage
+            data.dnf = true; // Mark as DNF if any stage is missed
         }
+
+        // Ensure DNF if the driver missed stages or had terminal damage
+        data.dnf = data.dnf || missedStages > 0;
+    }
+
+    // Sort standings with DNFs at the bottom
+    let sortedStandings = Object.entries(standings)
+        .sort(([, a], [, b]) => {
+            if (a.dnf && b.dnf) return 0; // Both are DNF
+            if (a.dnf) return 1; // Move DNF to the bottom
+            if (b.dnf) return -1; 
+            return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime); // Sort by total time if not DNF
+        });
+
+    // Determine the best total time (excluding DNFs)
+    const bestTotalTime = sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0;
+
+    // Map sorted standings with all calculated data
+    sortedStandings = sortedStandings.map(([driver, data], index) => ({
+        position: index + 1,
+        driver,
+        totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime + data.penaltyTime),
+        timeDiff: data.dnf
+            ? formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime)
+            : formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
+        totalPenalty: formatSecondsToTime(data.penaltyTime),
+        stagesCompleted: data.stagesCompleted,
+        platform: data.platform,
+        dnf: data.dnf ? "DNF" : "",
+        eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0,
+        powerStagePoints: lastStageResults.find(r => r.driver === driver)?.rank <= 5
+            ? powerStagePoints[lastStageResults.find(r => r.driver === driver).rank - 1]
+            : 0
+    }));
+
+    // Render the table
+    const tbody = document.querySelector("#standings tbody");
+    tbody.innerHTML = "";
+    sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
+        const row = `<tr>
+            <td>${position}</td>
+            <td>${driver}</td>
+            <td>${totalTime}</td>
+            <td>${timeDiff}</td>
+            <td>${totalPenalty}</td>
+            <td>${stagesCompleted}</td>
+            <td>${platform}</td>
+            <td>${dnf}</td>
+            <td>${eventPoints}</td>
+            <td>${powerStagePoints}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+
 
         async function main() {
             await generateStandings();
