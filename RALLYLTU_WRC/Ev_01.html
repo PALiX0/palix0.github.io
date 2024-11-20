@@ -120,7 +120,7 @@
         }
 
         async function generateStandings() {
-            const bannedPlayers = await fetchBannedPlayers();
+            
             const files = await listCSVFiles();
             const pointsMap = await fetchPoints();
             const standings = {};
@@ -167,24 +167,31 @@ for (const driver in standings) {
 }
 
 // Sort standings with DNFs at the bottom
-const sortedStandings = Object.entries(standings)
+let sortedStandings = Object.entries(standings)
     .sort(([, a], [, b]) => {
         if (a.dnf && b.dnf) return 0; // Keep relative order of DNFs
         if (a.dnf) return 1; // DNF goes to the bottom
         if (b.dnf) return -1; // Valid goes above
         return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
-    })
-    .map(([driver, data], index) => ({
-        position: data.dnf ? "-" : index + 1,
-        driver,
-        totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
-        timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - sortedStandings[0][1].totalTime),
-        totalPenalty: formatSecondsToTime(data.penaltyTime),
-        stagesCompleted: data.stagesCompleted,
-        platform: data.platform,
-        dnf: data.dnf ? "DNF" : "",
-        eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0, // No points for DNF
-    }));
+    });
+
+// Compute the best (minimum) total time for valid drivers
+const bestTotalTime = sortedStandings.length
+    ? sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0
+    : 0;
+
+// Map to final standings, ensuring timeDiff is calculated correctly
+sortedStandings = sortedStandings.map(([driver, data], index) => ({
+    position: data.dnf ? "-" : index + 1,
+    driver,
+    totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
+    timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - bestTotalTime),
+    totalPenalty: formatSecondsToTime(data.penaltyTime),
+    stagesCompleted: data.stagesCompleted,
+    platform: data.platform,
+    dnf: data.dnf ? "DNF" : "",
+    eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0, // No points for DNF
+}));
             
             // Add timeDiff in a second pass
             const baseTime = sortedStandings.find(entry => entry.position !== "-")?.rawTotalTime || 0;
