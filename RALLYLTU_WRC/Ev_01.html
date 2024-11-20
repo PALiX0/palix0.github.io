@@ -201,7 +201,7 @@ async function generateStandings() {
     sortedStandings = sortedStandings.map(([driver, data], index) => ({
         position: index + 1,
         driver,
-        totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime + data.penaltyTime),
+        totalTime: formatSecondsToTime(data.totalTime + data.penaltyTime),
         timeDiff: data.dnf
             ? formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime)
             : formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
