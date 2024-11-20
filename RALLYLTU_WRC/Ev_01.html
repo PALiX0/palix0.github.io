@@ -25,16 +25,16 @@
     <table id="standings">
         <thead>
             <tr>
-                <th>Power Stage Points</th>
-                <th>Event Points</th>
                 <th>Position</th>
                 <th>Driver</th>
                 <th>Total Time</th>
                 <th>Time Difference to First</th>
-                <th>Total Time Penalty</th>
-                <th>DNF</th>
+                <th>Total Penalty</th>
                 <th>Stages Completed</th>
                 <th>Platform</th>
+                <th>DNF</th>
+                <th>Event Points</th>
+                <th>Power Stage Points</th>
             </tr>
         </thead>
         <tbody>
@@ -42,38 +42,29 @@
     </table>
 
     <script>
-        async function fetchJSON(url) {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch JSON: ${url}`);
-            }
-            return response.json();
-        }
-
-        async function fetchBannedPlayers() {
-          const response = await fetchJSON("/banned_players.json");
-          return new Set(response); // Convert to Set for faster lookup
-        }
-
         async function fetchCSV(url) {
             const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`Failed to fetch CSV: ${url}`);
+                console.error(`Failed to load CSV: ${url}`);
+                return [];
             }
-            return response.text();
+            const text = await response.text();
+            return parseCSV(text);
         }
 
         function parseCSV(data) {
-            const rows = data.split("\n").map(row => row.trim()).filter(row => row);
+            const rows = data.split("\n").map(row => row.trim()).filter(row => row !== "");
             const headers = rows[0].split(",").map(header => header.trim());
             const dataRows = rows.slice(1);
-
-            // Dynamic index mapping
             const rankIndex = headers.indexOf("Rank");
             const driverIndex = headers.indexOf("DisplayName");
             const timeIndex = headers.indexOf("Time");
-            const penaltyIndex = headers.indexOf("TimePenalty");
             const platformIndex = headers.indexOf("Platform");
+
+            if (rankIndex === -1 || driverIndex === -1 || timeIndex === -1) {
+                console.error("Required columns are missing from the CSV file.");
+                return [];
+            }
 
             return dataRows.map(row => {
                 const cells = row.split(",").map(cell => cell.trim());
@@ -81,14 +72,23 @@
                     rank: parseInt(cells[rankIndex], 10),
                     driver: cells[driverIndex],
                     time: cells[timeIndex],
-                    penalty: parseTimeToSeconds(cells[penaltyIndex] || "00:00:00"),
-                    platform: cells[platformIndex],
+                    platform: cells[platformIndex] || "Unknown"
                 };
-            });
+            }).filter(row => row.rank && row.driver && row.time);
         }
 
         function parseTimeToSeconds(time) {
+            if (!time || typeof time !== "string") {
+                console.warn(`Invalid time value: "${time}"`);
+                return 0;
+            }
+
             const [hh, mm, ssWithMs] = time.split(":");
+            if (!hh || !mm || !ssWithMs) {
+                console.warn(`Unexpected time format: "${time}"`);
+                return 0;
+            }
+
             const [ss, ms = "0"] = ssWithMs.split(".");
             return (
                 parseInt(hh, 10) * 3600 +
@@ -105,124 +105,116 @@
             return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
         }
 
-        async function fetchPoints() {
-            const pointsData = await fetchCSV("/points/points_top20.csv");
-            return pointsData.split("\n").reduce((pointsMap, row) => {
-                const [position, points] = row.split(",").map(Number);
-                pointsMap[position] = points;
-                return pointsMap;
+        async function listCSVFiles() {
+            try {
+                const response = await fetch("/RALLYLTU_WRC/csv/Ch_W05/Ev_01/file_list.json");
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const files = await response.json();
+                document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
+                return files.map(file => `/RALLYLTU_WRC/csv/Ch_W05/Ev_01/${file}`);
+            } catch (error) {
+                document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
+                console.error("Error loading file_list.json:", error);
+                return [];
+            }
+        }
+
+        async function fetchPointsMap() {
+            const response = await fetch("/points/points_top20.csv");
+            if (!response.ok) {
+                console.error("Failed to load points map.");
+                return {};
+            }
+            const text = await response.text();
+            return text.split("\n").reduce((map, line) => {
+                const [position, points] = line.split(",").map(x => parseInt(x, 10));
+                if (!isNaN(position) && !isNaN(points)) {
+                    map[position] = points;
+                }
+                return map;
             }, {});
         }
 
-        async function listCSVFiles() {
-            const fileList = await fetchJSON("/RALLYLTU_WRC/csv/Ch_W05/Ev_01/file_list.json");
-            return fileList.map(file => `/RALLYLTU_WRC/csv/Ch_W05/Ev_01/${file}`);
-        }
-
         async function generateStandings() {
-            
             const files = await listCSVFiles();
-            const pointsMap = await fetchPoints();
+            const pointsMap = await fetchPointsMap();
             const standings = {};
-            let lastStageResults = [];
+            const lastStageResults = await fetchCSV(files[files.length - 1]);
+            const powerStagePoints = [5, 4, 3, 2, 1];
 
-            for (const [index, file] of files.entries()) {
-                const csvData = await fetchCSV(file);
-                const stageResults = parseCSV(csvData);
+            // Process each stage file
+            for (const file of files) {
+                const stageResults = await fetchCSV(file);
+                stageResults.forEach(({ rank, driver, time, platform }) => {
+                    const totalSeconds = parseTimeToSeconds(time);
 
-                if (index === files.length - 1) lastStageResults = stageResults;
+                    if (!standings[driver]) {
+                        standings[driver] = {
+                            totalTime: 0,
+                            penaltyTime: 0,
+                            stagesCompleted: 0,
+                            dnf: false,
+                            platform
+                        };
+                    }
 
-stageResults.forEach(({ position, driver, time, platform }) => {
-    const totalSeconds = parseTimeToSeconds(time);
-
-    // Initialize driver data if not already present
-    if (!standings[driver]) {
-        standings[driver] = {
-            totalTime: 0,
-            penaltyTime: 0,
-            stagesCompleted: 0,
-            missedStages: 0,
-            platform,
-            dnf: false, // Default to not DNF
-        };
-    }
-
-    const driverData = standings[driver];
-
-    // Add stage time and increment completed stages
-    driverData.totalTime += totalSeconds;
-    driverData.stagesCompleted += 1;
-});
+                    const driverData = standings[driver];
+                    driverData.totalTime += totalSeconds;
+                    driverData.stagesCompleted += 1;
+                });
             }
-            
-// Check for missed stages and apply penalties
-for (const driver in standings) {
-    const driverData = standings[driver];
-    const missedStages = files.length - driverData.stagesCompleted;
 
-    if (missedStages > 0) {
-        driverData.penaltyTime += missedStages * 30 * 60; // Add 30 minutes per missed stage
-        driverData.dnf = true; // Mark as DNF
-    }
-}
-
-// Sort standings with DNFs at the bottom
-let sortedStandings = Object.entries(standings)
-    .sort(([, a], [, b]) => {
-        if (a.dnf && b.dnf) return 0; // Keep relative order of DNFs
-        if (a.dnf) return 1; // DNF goes to the bottom
-        if (b.dnf) return -1; // Valid goes above
-        return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
-    });
-
-// Compute the best (minimum) total time for valid drivers
-const bestTotalTime = sortedStandings.length
-    ? sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0
-    : 0;
-
-// Map to final standings, ensuring timeDiff is calculated correctly
-sortedStandings = sortedStandings.map(([driver, data], index) => ({
-    position: data.dnf ? "-" : index + 1,
-    driver,
-    totalTime: data.dnf ? "DNF" : formatSecondsToTime(data.totalTime),
-    timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime - bestTotalTime),
-    totalPenalty: formatSecondsToTime(data.penaltyTime),
-    stagesCompleted: data.stagesCompleted,
-    platform: data.platform,
-    dnf: data.dnf ? "DNF" : "",
-    eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0, // No points for DNF
-}));
-            
-            // Add timeDiff in a second pass
-            const baseTime = sortedStandings.find(entry => entry.position !== "-")?.rawTotalTime || 0;
-            
-            sortedStandings.forEach(entry => {
-                if (entry.position !== "-") {
-                    entry.timeDiff = formatSecondsToTime(entry.rawTotalTime - baseTime);
-                } else {
-                    entry.timeDiff = "-";
+            // Apply penalties for missed stages
+            const totalStages = files.length;
+            for (const driver in standings) {
+                const data = standings[driver];
+                const missedStages = totalStages - data.stagesCompleted;
+                if (missedStages > 0) {
+                    data.penaltyTime += missedStages * 1800; // 30 minutes per missed stage
+                    data.dnf = true; // Mark as DNF if any stage is missed
                 }
-            });
+            }
 
-            const lastStagePowerPoints = lastStageResults.slice(0, 5).map((result, i) => ({
-                driver: result.driver,
-                powerStagePoints: 5 - i,
+            // Sort standings with DNFs at the bottom
+            let sortedStandings = Object.entries(standings)
+                .sort(([, a], [, b]) => {
+                    if (a.dnf && b.dnf) return 0;
+                    if (a.dnf) return 1;
+                    if (b.dnf) return -1;
+                    return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
+                });
+
+            const bestTotalTime = sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0;
+
+            sortedStandings = sortedStandings.map(([driver, data], index) => ({
+                position: index + 1,
+                driver,
+                totalTime: formatSecondsToTime(data.totalTime + data.penaltyTime),
+                timeDiff: data.dnf ? "-" : formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
+                totalPenalty: formatSecondsToTime(data.penaltyTime),
+                stagesCompleted: data.stagesCompleted,
+                platform: data.platform,
+                dnf: data.dnf ? "DNF" : "",
+                eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0,
+                powerStagePoints: lastStageResults.find(r => r.driver === driver)?.rank <= 5
+                    ? powerStagePoints[lastStageResults.find(r => r.driver === driver).rank - 1]
+                    : 0
             }));
 
             const tbody = document.querySelector("#standings tbody");
             tbody.innerHTML = "";
-            sortedStandings.forEach(({ powerStagePoints, eventPoints, position, driver, totalTime, timeDiff, totalPenalty, dnf, stagesCompleted, platform }) => {
+            sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
                 const row = `<tr>
-                    <td>${powerStagePoints || 0}</td>
-                    <td>${eventPoints}</td>
                     <td>${position}</td>
                     <td>${driver}</td>
                     <td>${totalTime}</td>
                     <td>${timeDiff}</td>
                     <td>${totalPenalty}</td>
-                    <td>${dnf}</td>
                     <td>${stagesCompleted}</td>
                     <td>${platform}</td>
+                    <td>${dnf}</td>
+                    <td>${eventPoints}</td>
+                    <td>${powerStagePoints}</td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
