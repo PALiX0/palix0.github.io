@@ -77,26 +77,32 @@
             }).filter(row => row.rank && row.driver && row.time);
         }
 
-        function parseTimeToSeconds(time) {
-            if (!time || typeof time !== "string") {
-                console.warn(`Invalid time value: "${time}"`);
-                return 0;
-            }
+function parseTimeToSeconds(time) {
+    if (!time || typeof time !== "string") {
+        console.warn(`Invalid time value: "${time}"`);
+        return 0;
+    }
 
-            const [hh, mm, ssWithMs] = time.split(":");
-            if (!hh || !mm || !ssWithMs) {
-                console.warn(`Unexpected time format: "${time}"`);
-                return 0;
-            }
+    // Ensure the time string matches the expected format
+    const timeRegex = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/;
+    const matches = time.match(timeRegex);
 
-            const [ss, ms = "0"] = ssWithMs.split(".");
-            return (
-                parseInt(hh, 10) * 3600 +
-                parseInt(mm, 10) * 60 +
-                parseInt(ss, 10) +
-                parseFloat(`0.${ms}`)
-            );
-        }
+    if (!matches) {
+        console.warn(`Unexpected time format: "${time}"`);
+        return 0;
+    }
+
+    const [hh, mm, ss, ms = "0"] = matches.slice(1);
+
+    // If milliseconds are not provided, default to 0
+    return (
+        parseInt(hh, 10) * 3600 +
+        parseInt(mm, 10) * 60 +
+        parseInt(ss, 10) +
+        parseFloat(`0.${ms}`)
+    );
+}
+
 
         function formatSecondsToTime(totalSeconds) {
             const hours = Math.floor(totalSeconds / 3600);
