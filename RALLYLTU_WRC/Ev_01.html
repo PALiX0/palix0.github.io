@@ -60,6 +60,7 @@
             const driverIndex = headers.indexOf("DisplayName");
             const timeIndex = headers.indexOf("Time");
             const platformIndex = headers.indexOf("Platform");
+            const penaltyTimeIndex = headers.indexOf("TimePenalty");
 
             if (rankIndex === -1 || driverIndex === -1 || timeIndex === -1) {
                 console.error("Required columns are missing from the CSV file.");
@@ -72,6 +73,7 @@
                     rank: parseInt(cells[rankIndex], 10),
                     driver: cells[driverIndex],
                     time: cells[timeIndex],
+                    penaltyTime: penaltyTimeIndex !== -1 ? cells[penaltyTimeIndex] : "00:00:00.000", // Default if missing
                     platform: cells[platformIndex] || "Unknown"
                 };
             }).filter(row => row.rank && row.driver && row.time);
