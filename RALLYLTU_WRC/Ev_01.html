@@ -76,7 +76,11 @@
                 };
             }).filter(row => row.rank && row.driver && row.time);
         }
-
+function isTerminalDamageTime(time) {
+    const terminalDamageTimes = ["00:08:00", "00:16:00", "00:25:00"];
+    return terminalDamageTimes.includes(time.trim());
+}
+        
 function parseTimeToSeconds(time) {
     if (!time || typeof time !== "string") {
         console.warn(`Invalid time value: "${time}"`);
@@ -151,26 +155,34 @@ async function generateStandings() {
     // Process each stage file
     for (const file of files) {
         const stageResults = await fetchCSV(file);
-        stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
-            const totalSeconds = parseTimeToSeconds(time);
-            const penaltySeconds = parseTimeToSeconds(penaltyTime);
+stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
+    const totalSeconds = parseTimeToSeconds(time);
+    const penaltySeconds = penaltyTime ? parseTimeToSeconds(penaltyTime) : 0;
 
-            // Ensure driver data exists in standings
-            if (!standings[driver]) {
-                standings[driver] = {
-                    totalTime: 0,
-                    penaltyTime: 0,
-                    stagesCompleted: 0,
-                    dnf: false,
-                    platform,
-                };
-            }
+    // Ensure driver data exists in standings
+    if (!standings[driver]) {
+        standings[driver] = {
+            totalTime: 0,
+            penaltyTime: 0,
+            stagesCompleted: 0,
+            dnf: false,
+            platform,
+        };
+    }
 
-            const driverData = standings[driver];
-            driverData.totalTime += totalSeconds;
-            driverData.penaltyTime += penaltySeconds;
-            driverData.stagesCompleted += 1;
-        });
+    const driverData = standings[driver];
+
+    if (isTerminalDamageTime(time)) {
+        // Handle terminal damage case
+        driverData.totalTime += totalSeconds; // Add the terminal damage time
+        driverData.dnf = true; // Mark driver as DNF
+    } else {
+        // Normal case: add time and penalties
+        driverData.totalTime += totalSeconds;
+        driverData.penaltyTime += penaltySeconds;
+        driverData.stagesCompleted += 1;
+    }
+});
     }
 
     // Apply penalties for missed stages
@@ -183,11 +195,6 @@ async function generateStandings() {
         if (missedStages > 0) {
             data.penaltyTime += missedStages * 1800; // 30 minutes per missed stage
             data.dnf = true; // Mark as DNF if any stage is missed
-        }
-
-        // Mark DNF if the driver has terminal damage (time = 8, 16, or 25 minutes)
-        if (data.totalTime === 8 * 60 || data.totalTime === 16 * 60 || data.totalTime === 25 * 60) {
-            data.dnf = true;
         }
     }
 
