@@ -189,27 +189,31 @@ stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
 });
     }
 
-    // Apply penalties for missed stages
-    const totalStages = files.length;
-    for (const driver in standings) {
-        const data = standings[driver];
-        const missedStages = totalStages - data.stagesCompleted;
+// Apply penalties for missed stages
+const totalStages = files.length;
+for (const driver in standings) {
+    const data = standings[driver];
+    const missedStages = totalStages - data.stagesCompleted;
 
-        // Apply 30-minute penalty per missed stage
-        if (missedStages > 0) {
-            data.penaltyTime += missedStages * 1800; // 30 minutes per missed stage
-            data.dnf = true; // Mark as DNF if any stage is missed
-        }
+    if (missedStages > 0) {
+        const missedPenalty = missedStages * 1800; // 30 minutes per missed stage
+        data.penaltyTime += missedPenalty; // Add missed stage penalty
+        data.dnf = true; // Mark as DNF if stages are missed
     }
+}
 
     // Sort standings, keeping DNFs at the bottom
     let sortedStandings = Object.entries(standings)
-        .sort(([, a], [, b]) => {
-            if (a.dnf && b.dnf) return 0;
-            if (a.dnf) return 1;
-            if (b.dnf) return -1;
+    .sort(([, a], [, b]) => {
+        if (a.dnf && b.dnf) {
+            // Both are DNFs: sort by total time
             return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
-        });
+        }
+        if (a.dnf) return 1; // Move DNFs to the bottom
+        if (b.dnf) return -1; // Move DNFs to the bottom
+        // Both are not DNFs: sort by total time
+        return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
+    });
 
     // Get the best total time to calculate time difference to first
     const bestTotalTime = sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0;
