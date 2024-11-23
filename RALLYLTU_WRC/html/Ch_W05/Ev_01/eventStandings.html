@@ -28,7 +28,7 @@
             text-align: center;
         }
         th {
-            background-color: #4CAF50;
+            background-color: #4c6baf;
             color: white;
             position: sticky;
             top: 0;
@@ -49,11 +49,6 @@
         }
         .dnf {
             background-color: #ffc4c4; /* Light red for DNF rows */
-            font-weight: bold;
-        }
-        .highlight-first {
-            font-weight: bold;
-            color: #4CAF50; /* Green for first place */
         }
         .responsive-wrapper {
             overflow-x: auto;
@@ -329,7 +324,9 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
     sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
         let rowClass = ""; // Default row class
         // Assign classes based on position for first, second, and third
-        if (position === 1) {
+        if (dnf === "DNF") {
+            rowClass = "dnf"; // dnf
+        } else if (position === 1) {
             rowClass = "first-place"; // Gold for first place
         } else if (position === 2) {
             rowClass = "second-place"; // Silver for second place
