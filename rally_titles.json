@@ -30,7 +30,7 @@
   "ee": {
     "rallyName": "Rally Estonia",
     "flagUrl": "https://flagcdn.com/w40/ee.png"
-  }
+  },
   "fi": {
     "rallyName": "Secto Rally Finland",
     "flagUrl": "https://flagcdn.com/w40/fi.png"
@@ -46,15 +46,15 @@
   "cz": {
     "rallyName": "Central Europe Rally",
     "flagUrl": "https://flagcdn.com/w40/cz.png"
-  }
+  },
   "jp": {
     "rallyName": "Forum8 Rally Japan",
     "flagUrl": "https://flagcdn.com/w40/jp.png"
-  }  
+  }  ,
   "fr": {
     "rallyName": "Rally Mediterraneo",
     "flagUrl": "https://flagcdn.com/w40/fr.png"
-  }  
+  }  ,
   "id": {
     "rallyName": "Agon by AOC Rally Pacifico",
     "flagUrl": "https://flagcdn.com/w40/id.png"
