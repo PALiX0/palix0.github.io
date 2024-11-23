@@ -34,6 +34,10 @@
             top: 0;
             z-index: 2;
         }
+        /* Align Driver column (index 1) to the left */
+        td.driver {
+            text-align: left;
+        }
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
@@ -64,7 +68,7 @@
         <thead>
             <tr>
                 <th>Position</th>
-                <th>Driver</th>
+                <th class="driver">Driver</th>
                 <th>Total Time</th>
                 <th>Time Difference to First</th>
                 <th>Total Penalty</th>
