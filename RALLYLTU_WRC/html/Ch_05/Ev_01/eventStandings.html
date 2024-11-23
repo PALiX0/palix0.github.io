@@ -160,7 +160,7 @@ function parseTimeToSeconds(time) {
                 // Get the parent folder name dynamically
                 const champFolder = location.pathname.split("/").slice(-3, -2)[0];
                 const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
-                const response = await fetch(`/RALLYLTU_WRC/csv/Ch_05/Ev_01/file_list.json`);
+                const response = await fetch("/RALLYLTU_WRC/csv/Ch_05/Ev_01/file_list.json");
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 const files = await response.json();
                 document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
