@@ -57,19 +57,33 @@
         .first-place {
             background-color: gold; /* Gold color for the first place */
             font-weight: bold;
-            color: black;
+            color: #333;
         }
 
         .second-place {
             background-color: silver; /* Silver color for the second place */
             font-weight: bold;
-            color: black;
+            color: #333;
         }
 
         .third-place {
             background-color: #cd7f32; /* Bronze color for the third place */
             font-weight: bold;
-            color: black;
+            color: #333;
+        } 
+        .top-ten {
+            background-color: #e6f7e6; /* Light Green */
+            color: #333; /* Text color for readability */
+        }
+
+        .top-twenty {
+            background-color: #e6f2f7; /* Light Blue */
+            color: #333;
+        }
+
+        .below-twenty {
+            background-color: #f3e6f7; /* Light Purple */
+            color: #333;
         }        
     </style>
 </head>
@@ -332,7 +346,13 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
             rowClass = "second-place"; // Silver for second place
         } else if (position === 3) {
             rowClass = "third-place"; // Bronze for third place
-        }        
+        } else if (position >= 4 && position <= 10) {
+         rowClass = "top-ten"; // Custom style for positions 4 to 10
+        } else if (position >= 11 && position <= 20) {
+         rowClass = "top-twenty"; // Custom style for positions 4 to 10
+        } else {
+            rowClass = "below-twenty"; // Custom style for positions 4 to 10
+        }
         const row = `<tr class="${rowClass}">
             <td>${position}</td>
             <td class="driver">${driver}</td>
