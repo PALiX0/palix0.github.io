@@ -179,11 +179,13 @@ stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
         driverData.totalTime += totalSeconds; // Add the terminal damage time
         driverData.dnf = true; // Mark driver as DNF
     //    driverData.penaltyTime += penaltySeconds; // Include any penalties from the CSV
+        driverData.displayPenaltyTime = (driverData.displayPenaltyTime || 0) + totalSeconds;
         driverData.stagesCompleted += 1; // Count as a completed stage
     } else {
         // Normal case: add time and penalties
         driverData.totalTime += totalSeconds;
-        driverData.penaltyTime += penaltySeconds;
+     //   driverData.penaltyTime += penaltySeconds;
+        driverData.displayPenaltyTime = (driverData.displayPenaltyTime || 0) + penaltySeconds;
         driverData.stagesCompleted += 1;
     }
 });
@@ -227,7 +229,8 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
     timeDiff: data.dnf
         ? formatSecondsToTime(data.totalTime - bestTotalTime)
         : formatSecondsToTime(data.totalTime - bestTotalTime),
-    totalPenalty: formatSecondsToTime(data.penaltyTime), // Display penalties separately
+  //  totalPenalty: formatSecondsToTime(data.penaltyTime), // Display penalties separately
+    totalPenalty: formatSecondsToTime(data.displayPenaltyTime || data.penaltyTime), // Use the display tracker
     stagesCompleted: data.stagesCompleted,
     platform: data.platform,
     dnf: data.dnf ? "DNF" : "",
