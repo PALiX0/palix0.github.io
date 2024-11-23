@@ -147,9 +147,24 @@ function parseTimeToSeconds(time) {
             }, {});
         }
 
+async function fetchBannedPlayers() {
+    try {
+        const response = await fetch("/banned_players.json");
+        if (!response.ok) {
+            console.error("Failed to load banned players list.");
+            return [];
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error loading banned players list:", error);
+        return [];
+    }
+}        
+
 async function generateStandings() {
     const files = await listCSVFiles();
     const pointsMap = await fetchPointsMap();
+    const bannedPlayers = await fetchBannedPlayers(); // Fetch banned players
     const standings = {};
     const lastStageResults = await fetchCSV(files[files.length - 1]);
     const powerStagePoints = [5, 4, 3, 2, 1];
@@ -158,6 +173,7 @@ async function generateStandings() {
     for (const file of files) {
         const stageResults = await fetchCSV(file);
 stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
+    if (bannedPlayers.includes(driver)) return; // Skip banned players
     const totalSeconds = parseTimeToSeconds(time);
     const penaltySeconds = penaltyTime ? parseTimeToSeconds(penaltyTime) : 0;
 
