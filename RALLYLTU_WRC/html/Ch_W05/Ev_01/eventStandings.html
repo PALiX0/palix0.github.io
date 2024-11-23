@@ -68,7 +68,7 @@
         <thead>
             <tr>
                 <th>Position</th>
-                <th class="driver">Driver</th>
+                <th>Driver</th>
                 <th>Total Time</th>
                 <th>Time Difference to First</th>
                 <th>Total Penalty</th>
@@ -311,7 +311,7 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
     sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
         const row = `<tr>
             <td>${position}</td>
-            <td>${driver}</td>
+            <td class="driver">${driver}</td>
             <td>${totalTime}</td>
             <td>${timeDiff}</td>
             <td>${totalPenalty}</td>
