@@ -178,7 +178,7 @@
     }
 
     loadRallyData();
-            
+
 function isTerminalDamageTime(time) {
     const terminalDamageTimes = ["00:08:00", "00:16:00", "00:25:00"];
     return terminalDamageTimes.includes(time.trim());
@@ -235,7 +235,7 @@ function parseTimeToSeconds(time) {
             } catch (error) {
                 document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
                 console.error("Error loading file_list.json:", error);
-                return [];
+                return [];  
             }
         }
 
