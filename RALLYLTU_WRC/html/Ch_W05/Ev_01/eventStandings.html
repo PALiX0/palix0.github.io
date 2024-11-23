@@ -404,10 +404,11 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
 
         async function main() {
             await generateStandings();
+            await loadRallyData();
         }
 
         main();
-        loadRallyData();
+        
     </script>
 </body>
 </html>
