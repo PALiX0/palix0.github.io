@@ -147,37 +147,7 @@
             }).filter(row => row.rank && row.driver && row.time);
         }
 
-    // Load the rallies and championship event data
-    async function loadRallyData() {
-      // Load rallies.json and Ch_W05.json
-      const ralliesResponse = await fetch('/rally_titles.json');
-      const rallies = await ralliesResponse.json();
-      const champFolder = location.pathname.split("/").slice(-3, -2)[0];
-      const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
-      const eventsResponse = await fetch(`/RALLYLTU_WRC/html/${champFolder}/events.json`);
-      const events = await eventsResponse.json();
 
-      // Get the country code for the current event (e.g., 'lt' for Ev_01)
-      const countryCode = events[eventFolder];
-
-      // Get rally data using the country code
-      const rally = rallies[countryCode];
-
-      // Set rally name and flag in the HTML
-      if (rally) {
-        document.getElementById('rally-title').textContent = rally.rallyName;
-        const flagImage = document.createElement('img');
-        flagImage.src = rally.flagUrl;
-        flagImage.alt = rally.rallyName + ' Flag';
-        flagImage.width = 40;
-        flagImage.height = 30;
-        document.getElementById('rally-flag').appendChild(flagImage);
-      } else {
-        console.error('Rally not found for this event!');
-      }
-    }
-
-    loadRallyData();
 
 function isTerminalDamageTime(time) {
     const terminalDamageTimes = ["00:08:00", "00:16:00", "00:25:00"];
@@ -268,6 +238,36 @@ async function fetchBannedPlayers() {
         return [];
     }
 }        
+
+    // Load the rallies and championship event data
+    async function loadRallyData() {
+      // Load rallies.json and Ch_W05.json
+      const ralliesResponse = await fetch('/rally_titles.json');
+      const rallies = await ralliesResponse.json();
+      const champFolder = location.pathname.split("/").slice(-3, -2)[0];
+      const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
+      const eventsResponse = await fetch(`/RALLYLTU_WRC/html/${champFolder}/events.json`);
+      const events = await eventsResponse.json();
+
+      // Get the country code for the current event (e.g., 'lt' for Ev_01)
+      const countryCode = events[eventFolder];
+
+      // Get rally data using the country code
+      const rally = rallies[countryCode];
+
+      // Set rally name and flag in the HTML
+      if (rally) {
+        document.getElementById('rally-title').textContent = rally.rallyName;
+        const flagImage = document.createElement('img');
+        flagImage.src = rally.flagUrl;
+        flagImage.alt = rally.rallyName + ' Flag';
+        flagImage.width = 40;
+        flagImage.height = 30;
+        document.getElementById('rally-flag').appendChild(flagImage);
+      } else {
+        console.error('Rally not found for this event!');
+      }
+    }
 
 async function generateStandings() {
     const files = await listCSVFiles();
@@ -407,6 +407,7 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
         }
 
         main();
+        loadRallyData();
     </script>
 </body>
 </html>
