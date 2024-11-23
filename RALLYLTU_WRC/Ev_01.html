@@ -178,6 +178,8 @@ stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
         // Handle terminal damage case
         driverData.totalTime += totalSeconds; // Add the terminal damage time
         driverData.dnf = true; // Mark driver as DNF
+        driverData.penaltyTime += penaltySeconds; // Include any penalties from the CSV
+        driverData.stagesCompleted += 1; // Count as a completed stage
     } else {
         // Normal case: add time and penalties
         driverData.totalTime += totalSeconds;
