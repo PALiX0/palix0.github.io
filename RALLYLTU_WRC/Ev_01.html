@@ -203,38 +203,38 @@ for (const driver in standings) {
 }
 
     // Sort standings, keeping DNFs at the bottom
-    let sortedStandings = Object.entries(standings)
+let sortedStandings = Object.entries(standings)
     .sort(([, a], [, b]) => {
         if (a.dnf && b.dnf) {
             // Both are DNFs: sort by total time
-            return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
+            return a.totalTime - b.totalTime;
         }
         if (a.dnf) return 1; // Move DNFs to the bottom
         if (b.dnf) return -1; // Move DNFs to the bottom
-        // Both are not DNFs: sort by total time
-        return (a.totalTime + a.penaltyTime) - (b.totalTime + b.penaltyTime);
+        // Sort non-DNFs by total time only
+        return a.totalTime - b.totalTime;
     });
 
     // Get the best total time to calculate time difference to first
     const bestTotalTime = sortedStandings.find(([, data]) => !data.dnf)?.[1]?.totalTime || 0;
 
-    // Map driver data to standings
-    sortedStandings = sortedStandings.map(([driver, data], index) => ({
-        position: index + 1,
-        driver,
-        totalTime: formatSecondsToTime(data.totalTime + data.penaltyTime),
-        timeDiff: data.dnf
-            ? formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime)
-            : formatSecondsToTime(data.totalTime + data.penaltyTime - bestTotalTime),
-        totalPenalty: formatSecondsToTime(data.penaltyTime),
-        stagesCompleted: data.stagesCompleted,
-        platform: data.platform,
-        dnf: data.dnf ? "DNF" : "",
-        eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0,
-        powerStagePoints: lastStageResults.find(r => r.driver === driver)?.rank <= 5
-            ? powerStagePoints[lastStageResults.find(r => r.driver === driver).rank - 1]
-            : 0
-    }));
+    /// Map driver data to standings
+sortedStandings = sortedStandings.map(([driver, data], index) => ({
+    position: index + 1,
+    driver,
+    totalTime: formatSecondsToTime(data.totalTime), // Use only the stage times directly
+    timeDiff: data.dnf
+        ? formatSecondsToTime(data.totalTime - bestTotalTime)
+        : formatSecondsToTime(data.totalTime - bestTotalTime),
+    totalPenalty: formatSecondsToTime(data.penaltyTime), // Display penalties separately
+    stagesCompleted: data.stagesCompleted,
+    platform: data.platform,
+    dnf: data.dnf ? "DNF" : "",
+    eventPoints: data.dnf ? 0 : pointsMap[index + 1] || 0,
+    powerStagePoints: lastStageResults.find(r => r.driver === driver)?.rank <= 5
+        ? powerStagePoints[lastStageResults.find(r => r.driver === driver).rank - 1]
+        : 0
+}));
 
     // Render standings in the table
     const tbody = document.querySelector("#standings tbody");
