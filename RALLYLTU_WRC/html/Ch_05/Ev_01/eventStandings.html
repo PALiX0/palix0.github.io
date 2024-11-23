@@ -5,23 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ev_01 Overall Standings</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
         table {
             border-collapse: collapse;
             width: 100%;
+            margin: 20px auto;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
         }
         th {
+            background-color: #4CAF50;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        tr:nth-child(even) {
             background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        td {
+            text-align: center;
+        }
+        .dnf {
+            background-color: #ffc4c4; /* Light red for DNF rows */
+            font-weight: bold;
+        }
+        .highlight-first {
+            font-weight: bold;
+            color: #4CAF50; /* Green for first place */
+        }
+        .responsive-wrapper {
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
     <h1>Ev_01 Overall Standings</h1>
-    <p id="debugInfo"></p>
+    <div class="responsive-wrapper">
+  //  <p id="debugInfo"></p>
     <table id="standings">
         <thead>
             <tr>
