@@ -18,15 +18,15 @@
   "pt": {
     "rallyName": "Vodafone Rally de Portugal",
     "flagUrl": "https://flagcdn.com/w40/pt.png"
-  }
+  },
   "it": {
     "rallyName": "Rally Italia Sardegna",
     "flagUrl": "https://flagcdn.com/w40/it.png"
-  }
+  },
   "ke": {
     "rallyName": "Safari Rally Kenya",
     "flagUrl": "https://flagcdn.com/w40/ke.png"
-  }
+  },
   "ee": {
     "rallyName": "Rally Estonia",
     "flagUrl": "https://flagcdn.com/w40/ee.png"
@@ -34,15 +34,15 @@
   "fi": {
     "rallyName": "Secto Rally Finland",
     "flagUrl": "https://flagcdn.com/w40/fi.png"
-  }
+  },
   "gr": {
     "rallyName": "EKO Acropolis Rally Greece",
     "flagUrl": "https://flagcdn.com/w40/gr.png"
-  }
+  },
   "cl": {
     "rallyName": "Bio Bío Rally Chile",
     "flagUrl": "https://flagcdn.com/w40/cl.png"
-  }
+  },
   "cz": {
     "rallyName": "Central Europe Rally",
     "flagUrl": "https://flagcdn.com/w40/cz.png"
@@ -58,23 +58,23 @@
   "id": {
     "rallyName": "Agon by AOC Rally Pacifico",
     "flagUrl": "https://flagcdn.com/w40/id.png"
-  }
+  },
   "nz": {
     "rallyName": "Fanatec Rally Oceania",
     "flagUrl": "https://flagcdn.com/w40/nz.png"
-  }  
+  }  ,
   "no": {
     "rallyName": "Rally Scandia",
     "flagUrl": "https://flagcdn.com/w40/no.png"
-  }  
+  }  ,
   "es": {
     "rallyName": "Rally Iberia",
     "flagUrl": "https://flagcdn.com/w40/es.png"
-  }  
+  }  ,
   "pl": {
     "rallyName": "Orlen 80th Rally Poland",
     "flagUrl": "https://flagcdn.com/w40/pl.png"
-  }  
+  }  ,
   "lv": {
     "rallyName": "Tet Rally Latvia",
     "flagUrl": "https://flagcdn.com/w40/lv.png"
