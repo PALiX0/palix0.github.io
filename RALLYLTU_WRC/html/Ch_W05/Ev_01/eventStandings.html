@@ -58,6 +58,24 @@
         .responsive-wrapper {
             overflow-x: auto;
         }
+        /* Row colors for the top 3 positions */
+        .first-place {
+            background-color: gold; /* Gold color for the first place */
+            font-weight: bold;
+            color: black;
+        }
+
+        .second-place {
+            background-color: silver; /* Silver color for the second place */
+            font-weight: bold;
+            color: black;
+        }
+
+        .third-place {
+            background-color: #cd7f32; /* Bronze color for the third place */
+            font-weight: bold;
+            color: black;
+        }        
     </style>
 </head>
 <body>
@@ -309,7 +327,16 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
     const tbody = document.querySelector("#standings tbody");
     tbody.innerHTML = "";
     sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
-        const row = `<tr>
+        let rowClass = ""; // Default row class
+        // Assign classes based on position for first, second, and third
+        if (position === 1) {
+            rowClass = "first-place"; // Gold for first place
+        } else if (position === 2) {
+            rowClass = "second-place"; // Silver for second place
+        } else if (position === 3) {
+            rowClass = "third-place"; // Bronze for third place
+        }        
+        const row = `<tr class="${rowClass}">
             <td>${position}</td>
             <td class="driver">${driver}</td>
             <td>${totalTime}</td>
