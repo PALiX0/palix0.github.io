@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ev_01 Overall Standings</title>
+    <title>RALIO REZULTATAI</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -81,12 +81,14 @@
         .below-twenty {
             background-color: #cdb7d7; /* Light Purple */
         }        
-    </style>
+    </style> 
 </head>
-<body>
-    <h1>Ev_01 Overall Standings</h1>
+<body> 
+    <h1>RALIO REZULTATAI</h1>
     <div class="responsive-wrapper">
-  //  <p id="debugInfo"></p>
+    <h2 id="rally-title"></h1> <!-- This is where the rally title and flag will be injected -->
+    <div id="rally-flag"></div> <!-- This is where the flag image will be injected -->
+    <!-- <p id="debugInfo"></p>  -->
     <table id="standings">
         <thead>
             <tr>
@@ -107,6 +109,38 @@
     </table>
 
     <script>
+    // Load the rallies and championship event data
+    async function loadRallyData() {
+      // Load rallies.json and Ch_W05.json
+      const ralliesResponse = await fetch('/rally_titles.json');
+      const rallies = await ralliesResponse.json();
+      const champFolder = location.pathname.split("/").slice(-3, -2)[0];
+      const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
+      const eventsResponse = await fetch(`/RALLYLTU_WRC/html/${champFolder}/events.json`);
+      const events = await eventsResponse.json();
+
+      // Get the country code for the current event (e.g., 'lt' for Ev_01)
+      const countryCode = events[eventFolder];
+
+      // Get rally data using the country code
+      const rally = rallies[countryCode];
+
+      // Set rally name and flag in the HTML
+      if (rally) {
+        document.getElementById('rally-title').textContent = rally.rallyName;
+        const flagImage = document.createElement('img');
+        flagImage.src = rally.flagUrl;
+        flagImage.alt = rally.rallyName + ' Flag';
+        flagImage.width = 40;
+        flagImage.height = 30;
+        document.getElementById('rally-flag').appendChild(flagImage);
+      } else {
+        console.error('Rally not found for this event!');
+      }
+    }
+
+    loadRallyData();
+
         async function fetchCSV(url) {
             const response = await fetch(url);
             if (!response.ok) {
