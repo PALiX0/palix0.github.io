@@ -98,21 +98,6 @@ function parseTimeToSeconds(time) {
             }
         }
 
-        async function fetchPointsMap() {
-            const response = await fetch("/points/points_top20.csv");
-            if (!response.ok) {
-                console.error("Failed to load points map.");
-                return {};
-            }
-            const text = await response.text();
-            return text.split("\n").reduce((map, line) => {
-                const [position, points] = line.split(",").map(x => parseInt(x, 10));
-                if (!isNaN(position) && !isNaN(points)) {
-                    map[position] = points;
-                }
-                return map;
-            }, {});
-        }
 
 async function fetchBannedPlayers() {
     try {
@@ -141,6 +126,9 @@ async function fetchBannedPlayers() {
       // Get the country code for the current event (e.g., 'lt' for Ev_01)
       const countryCode = events[eventFolder];
 
+        // Fetch the pointsCSV filename for the championship
+        window.pointsCSV = events.pointsCSV || "points_top20"; // Fallback if not set
+
       // Get rally data using the country code
       const rally = rallies[countryCode];
 
@@ -154,6 +142,22 @@ async function fetchBannedPlayers() {
         console.error('Rally not found for this event!');
         rallyHeader.textContent = `Event ${eventNumber}`;
     }
+    }
+
+    async function fetchPointsMap() {
+        const response = await fetch(`/points/${window.pointsCSV}.csv`);
+        if (!response.ok) {
+            console.error("Failed to load points map.");
+            return {};
+        }
+        const text = await response.text();
+        return text.split("\n").reduce((map, line) => {
+            const [position, points] = line.split(",").map(x => parseInt(x, 10));
+            if (!isNaN(position) && !isNaN(points)) {
+                map[position] = points;
+            }
+            return map;
+        }, {});
     }
 
 async function generateStandings() {
