@@ -1,0 +1,86 @@
+body {
+	font-family: Arial, sans-serif;
+	background-color: #1a1a40; /* Dark blue */
+	color: #f1f1f1; /* Light text for contrast */
+	margin: 0;
+	padding: 20px;
+}
+h1 {
+	text-align: center;
+	color: #f1f1f1;
+}
+table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 20px auto;
+	background-color: #dbdbdb; /* Slightly darker gray for table background */
+	color: black; 
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);        
+	}
+th, td {
+	border: 1px solid #40444b;
+	padding: 12px;
+	text-align: center;
+}
+th {
+	background-color: #4c6baf; 
+	color: white;
+	position: sticky;
+	top: 0;
+	z-index: 2;
+}
+/* Align Driver column (index 1) to the left */
+td.driver {
+	text-align: left;
+}
+/*  tr:nth-child(even) {
+	background-color: #f2f2f2;
+} */
+tr:hover {
+	background-color: #1858b8 !important;/* Slightly lighter gray on hover */
+	color: white;
+}        
+td {
+	text-align: center;
+}
+.dnf {
+	background-color: #EAD7D7; /* Light muted pink */
+	color: #cc0000; /* Deep red for text */        
+	}
+.responsive-wrapper {
+	overflow-x: auto;
+}
+/* Row colors for the top 3 positions */
+.first-place {
+	background-color: gold; /* Gold color for the first place */
+	font-weight: bold;
+}
+
+.second-place {
+	background-color: gainsboro; /* Silver color for the second place */
+	font-weight: bold;
+}
+
+.third-place {
+	background-color: #cd7f32; /* Bronze color for the third place */
+	font-weight: bold;
+} 
+.top-ten:nth-child(even) {
+	background-color: #AFEAC6; /* Light Green */
+}
+.top-ten:nth-child(odd) {
+	background-color: #C0EAD0; /* Light Green */
+}       
+.top-twenty:nth-child(even) {
+	background-color: #B5D8F2; /* Light Blue */
+}
+.top-twenty:nth-child(odd) {
+	background-color: #C6DFF2; /* Light Blue */
+}
+.below-twenty:nth-child(even) {
+	background-color: #BCB3EF; /* Light Purple */
+} 
+.below-twenty:nth-child(odd) {
+	background-color: #CBC4EF; /* Light Purple */
+} 
+	   
