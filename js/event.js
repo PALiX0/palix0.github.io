@@ -183,7 +183,7 @@ async function generateStandings() {
     // Process each stage file
     for (const file of files) {
         const stageResults = await fetchCSV(file);
-stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
+stageResults.forEach(({ rank, driver, vehicle, time, platform, penaltyTime }) => {
     if (bannedPlayers.includes(driver)) return; // Skip banned players
     const totalSeconds = parseTimeToSeconds(time);
     const penaltySeconds = penaltyTime ? parseTimeToSeconds(penaltyTime) : 0;
@@ -196,6 +196,7 @@ stageResults.forEach(({ rank, driver, time, platform, penaltyTime }) => {
             stagesCompleted: 0,
             dnf: false,
             platform,
+            vehicle,
         };
     }
 
@@ -252,6 +253,7 @@ let sortedStandings = Object.entries(standings)
 sortedStandings = sortedStandings.map(([driver, data], index) => ({
     position: index + 1,
     driver,
+    vehicle: data.vehicle,
     totalTime: formatSecondsToTime(data.totalTime), // Use only the stage times directly
     timeDiff: data.dnf
         ? formatTimeDiffToFirst(data.totalTime - bestTotalTime)
