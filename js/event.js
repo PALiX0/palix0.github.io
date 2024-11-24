@@ -81,6 +81,12 @@ function parseTimeToSeconds(time) {
             return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
         }
 
+        function toggleNoDataMessage(show) {
+            const noDataElement = document.getElementById("no-data-message");
+            if (noDataElement) {
+                noDataElement.style.display = show ? "block" : "none"; // Show or hide message
+            }
+        }        
         async function listCSVFiles() {
             try {
                 // Get the parent folder name dynamically
@@ -91,10 +97,12 @@ function parseTimeToSeconds(time) {
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 const files = await response.json();
                 document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
+                toggleNoDataMessage(files.length === 0);
                 return files.map(file => `/${clubFolder}/csv/${champFolder}/${eventFolder}/${file}`);
             } catch (error) {
                 document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
                 console.error("Error loading file_list.json:", error);
+                toggleNoDataMessage(true);
                 return [];  
             }
         }

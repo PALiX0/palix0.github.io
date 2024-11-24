@@ -83,4 +83,9 @@ td {
 .below-twenty:nth-child(odd) {
 	background-color: #CBC4EF; /* Light Purple */
 } 
-	   
+#no-data-message {
+    margin-top: 0.5rem; /* Adds space between title and message */
+    color: #666;
+    font-size: 1rem;
+    font-style: italic;
+}	   
