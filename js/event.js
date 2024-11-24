@@ -84,13 +84,14 @@ function parseTimeToSeconds(time) {
         async function listCSVFiles() {
             try {
                 // Get the parent folder name dynamically
+                const clubFolder = location.pathname.split("/").slice(-5, -4)[0];
                 const champFolder = location.pathname.split("/").slice(-3, -2)[0];
                 const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
-                const response = await fetch(`/RALLYLTU_WRC/csv/${champFolder}/${eventFolder}/file_list.json`);
+                const response = await fetch(`/${clubFolder}/csv/${champFolder}/${eventFolder}/file_list.json`);
                 if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                 const files = await response.json();
                 document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
-                return files.map(file => `/RALLYLTU_WRC/csv/${champFolder}/${eventFolder}/${file}`);
+                return files.map(file => `/${clubFolder}/csv/${champFolder}/${eventFolder}/${file}`);
             } catch (error) {
                 document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
                 console.error("Error loading file_list.json:", error);
@@ -117,9 +118,10 @@ async function fetchBannedPlayers() {
     async function loadRallyData() {
       const ralliesResponse = await fetch('/rally_titles.json');
       const rallies = await ralliesResponse.json();
+      const clubFolder = location.pathname.split("/").slice(-5, -4)[0];
       const champFolder = location.pathname.split("/").slice(-3, -2)[0];
       const eventFolder = location.pathname.split("/").slice(-2, -1)[0];
-      const eventsResponse = await fetch(`/RALLYLTU_WRC/html/${champFolder}/events.json`);
+      const eventsResponse = await fetch(`/${clubFolder}/html/${champFolder}/events.json`);
       const events = await eventsResponse.json();
 
       const eventNumber = eventFolder.replace("Ev_", ""); // Remove "Ev_" from folder name
