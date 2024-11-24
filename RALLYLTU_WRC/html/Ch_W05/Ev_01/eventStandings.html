@@ -43,7 +43,7 @@
             background-color: #f2f2f2;
         } */
         tr:hover {
-            background-color: #1858b8; /* Slightly lighter gray on hover */
+            background-color: #1858b8 !important;/* Slightly lighter gray on hover */
             color: white;
         }        
         td {
@@ -76,13 +76,19 @@
         .top-ten:nth-child(odd) {
             background-color: #C0EAD0; /* Light Green */
         }       
-        .top-twenty {
-            background-color: #A5D3F7; /* Light Blue */
+        .top-twenty:nth-child(even) {
+            background-color: #B5D8F2; /* Light Blue */
         }
-
-        .below-twenty {
-            background-color: #bbdefb; /* Light Purple */
-        }        
+        .top-twenty:nth-child(odd) {
+            background-color: #C6DFF2; /* Light Blue */
+        }
+        .below-twenty:nth-child(even) {
+            background-color: #BCB3EF; /* Light Purple */
+        } 
+        .below-twenty:nth-child(odd) {
+            background-color: #CBC4EF; /* Light Purple */
+        } 
+               
     </style> 
 </head>
 <body> 
