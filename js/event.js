@@ -18,6 +18,7 @@
             const timeIndex = headers.indexOf("Time");
             const platformIndex = headers.indexOf("Platform");
             const penaltyTimeIndex = headers.indexOf("TimePenalty");
+            const vehicleIndex = headers.indexOf("Vehicle");
 
             if (rankIndex === -1 || driverIndex === -1 || timeIndex === -1) {
                 console.error("Required columns are missing from the CSV file.");
@@ -31,7 +32,8 @@
                     driver: cells[driverIndex],
                     time: cells[timeIndex],
                     penaltyTime: penaltyTimeIndex !== -1 ? cells[penaltyTimeIndex] : "00:00:00.000", // Default if missing
-                    platform: cells[platformIndex] || "Unknown"
+                    platform: cells[platformIndex] || "Unknown",
+                    vehicle: vehicleIndex !== -1 ? cells[vehicleIndex] : "Unknown" // Extract vehicle, default if missing
                 };
             }).filter(row => row.rank && row.driver && row.time);
         }
@@ -268,7 +270,7 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
     // Render standings in the table
     const tbody = document.querySelector("#standings tbody");
     tbody.innerHTML = "";
-    sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints }) => {
+    sortedStandings.forEach(({ position, driver, totalTime, timeDiff, totalPenalty, stagesCompleted, platform, dnf, eventPoints, powerStagePoints, vehicle }) => {
         let rowClass = ""; // Default row class
         // Assign classes based on position for first, second, and third
         if (dnf === "DNF") {
@@ -289,6 +291,7 @@ sortedStandings = sortedStandings.map(([driver, data], index) => ({
         const row = `<tr class="${rowClass}">
             <td>${position}</td>
             <td class="driver">${driver}</td>
+            <td>${vehicle}</td>
             <td>${totalTime}</td>
             <td>${timeDiff}</td>
             <td>${totalPenalty}</td>
