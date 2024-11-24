@@ -29,7 +29,7 @@
             text-align: center;
         }
         th {
-            background-color: #4c6baf;
+            background-color: #4c6baf; 
             color: white;
             position: sticky;
             top: 0;
@@ -50,8 +50,8 @@
             text-align: center;
         }
         .dnf {
-            background-color: #ffc4c4; /* Light red for DNF rows */
-        }
+            background-color: #D8C5C5; /* Light muted pink */
+            color: #cc0000; /* Deep red for text */        }
         .responsive-wrapper {
             overflow-x: auto;
         }
@@ -62,7 +62,7 @@
         }
 
         .second-place {
-            background-color: silver; /* Silver color for the second place */
+            background-color: gainsboro; /* Silver color for the second place */
             font-weight: bold;
         }
 
@@ -71,15 +71,15 @@
             font-weight: bold;
         } 
         .top-ten {
-            background-color: #b7d7b7; /* Light Green */
+            background-color: #bbdefb; /* Light Green */
         }
 
         .top-twenty {
-            background-color: #b7cfe0; /* Light Blue */
+            background-color: #A5D3F7; /* Light Blue */
         }
 
         .below-twenty {
-            background-color: #cdb7d7; /* Light Purple */
+            background-color: #90caf9; /* Light Purple */
         }        
     </style> 
 </head>
@@ -260,7 +260,7 @@ async function fetchBannedPlayers() {
       // Set rally name and flag in the HTML
       if (rally) {
         const flagImage = `<img src="${rally.flagUrl}" alt="${rally.rallyName} Flag" width="40" height="30" style="vertical-align: middle;">`;
-        rallyHeader.innerHTML = `${eventNumber}" • " ${flagImage}" • " ${rally.rallyName}`;
+        rallyHeader.innerHTML = `${eventNumber} • ${flagImage} ${rally.rallyName}`;
     } else {
         console.error('Rally not found for this event!');
         rallyHeader.textContent = `Event ${eventNumber}`;
