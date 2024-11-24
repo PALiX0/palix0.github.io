@@ -203,7 +203,7 @@ function parseTimeToSeconds(time) {
                 document.getElementById("debugInfo").innerText = `Found ${files.length} CSV file(s).`;
                 return files.map(file => `/RALLYLTU_WRC/csv/${champFolder}/${eventFolder}/${file}`);
             } catch (error) {
-                document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
+             //   document.getElementById("debugInfo").innerText = `Error loading file list: ${error.message}`;
                 console.error("Error loading file_list.json:", error);
                 return [];  
             }
