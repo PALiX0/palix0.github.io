@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overall Championship Standings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a40; /* Dark blue */
+            color: #f1f1f1; /* Light text for contrast */
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #f1f1f1;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px auto;
+            background-color: #dbdbdb; /* Slightly darker gray for table background */
+            color: black;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        th, td {
+            border: 1px solid #40444b;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #4c6baf;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        td.driver {
+            text-align: left;
+        }
+        tr:hover {
+            background-color: #1858b8 !important; /* Slightly lighter gray on hover */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Overall Championship Standings</h1>
+    <table id="standings">
+        <thead>
+            <tr id="table-header">
+                <th>Position</th>
+                <th>Driver</th>
+                <!-- Event columns will be dynamically added -->
+                <th>Total Points</th>
+                <th>Total Time</th>
+                <th>Time Difference</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchCSV(url) {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`Failed to load CSV: ${url}`);
+                return [];
+            }
+            const text = await response.text();
+            return parseCSV(text);
+        }
+
+        function parseCSV(data) {
+            const rows = data.split("\n").map(row => row.trim()).filter(row => row !== "");
+            const headers = rows[0].split(",").map(header => header.trim());
+            const dataRows = rows.slice(1);
+            const rankIndex = headers.indexOf("Rank");
+            const driverIndex = headers.indexOf("DisplayName");
+            const timeIndex = headers.indexOf("Time");
+            const platformIndex = headers.indexOf("Platform");
+            const penaltyTimeIndex = headers.indexOf("TimePenalty");
+
+            return dataRows.map(row => {
+                const cells = row.split(",").map(cell => cell.trim());
+                return {
+                    rank: parseInt(cells[rankIndex], 10),
+                    driver: cells[driverIndex],
+                    time: cells[timeIndex],
+                    penaltyTime: penaltyTimeIndex !== -1 ? cells[penaltyTimeIndex] : "00:00:00.000",
+                    platform: cells[platformIndex] || "Unknown"
+                };
+            });
+        }
+
+        async function getEventStandings(eventFolder, champFolder) {
+            try {
+                const filesResponse = await fetch(`/RALLYLTU_WRC/csv/${champFolder}/${eventFolder}/file_list.json`);
+                if (!filesResponse.ok) {
+                    console.error(`No files found for ${eventFolder}`);
+                    return [];
+                }
+                const files = await filesResponse.json();
+                const standings = {};
+
+                for (const file of files) {
+                    const stageResults = await fetchCSV(`/RALLYLTU_WRC/csv/${champFolder}/${eventFolder}/${file}`);
+                    stageResults.forEach(({ driver, time, rank, penaltyTime }) => {
+                        if (!standings[driver]) {
+                            standings[driver] = {
+                                totalTime: 0,
+                                eventPoints: 0,
+                                powerStagePoints: 0
+                            };
+                        }
+
+                        // Add stage times to total
+                        standings[driver].totalTime += parseTimeToSeconds(time);
+
+                        // Calculate power stage points for top 5 drivers
+                        if (rank <= 5) {
+                            standings[driver].powerStagePoints += [5, 4, 3, 2, 1][rank - 1] || 0;
+                        }
+
+                        // Calculate event points (simplified for now; you can integrate custom logic)
+                        standings[driver].eventPoints += Math.max(0, 20 - rank); // Example: 20 for 1st, 19 for 2nd, etc.
+                    });
+                }
+
+                return standings;
+            } catch (error) {
+                console.error(`Error fetching standings for ${eventFolder}:`, error);
+                return [];
+            }
+        }
+
+        function parseTimeToSeconds(time) {
+            const [hh, mm, ss] = time.split(":").map(x => parseFloat(x) || 0);
+            return hh * 3600 + mm * 60 + ss;
+        }
+
+        function formatSecondsToTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = (totalSeconds % 60).toFixed(3);
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(6, "0")}`;
+        }
+
+        function formatTimeDiff(totalSeconds) {
+            if (totalSeconds === 0) return "Leader";
+            const sign = totalSeconds > 0 ? "+" : "-";
+            const minutes = Math.floor(Math.abs(totalSeconds) / 60);
+            const seconds = (Math.abs(totalSeconds) % 60).toFixed(3);
+            return `${sign}${minutes}:${seconds}`;
+        }
+
+        async function generateOverallStandings() {
+            const champFolder = location.pathname.split("/").slice(-2, -1)[0];
+            const eventsResponse = await fetch(`/RALLYLTU_WRC/html/${champFolder}/events.json`);
+            const events = await eventsResponse.json();
+
+            const drivers = {};
+
+            for (const [eventFolder] of Object.entries(events)) {
+                const eventStandings = await getEventStandings(eventFolder, champFolder);
+
+                for (const [driver, data] of Object.entries(eventStandings)) {
+                    if (!drivers[driver]) {
+                        drivers[driver] = {
+                            driver,
+                            totalPoints: 0,
+                            totalPowerStagePoints: 0,
+                            totalTime: 0,
+                            eventPoints: {},
+                            eventPSPoints: {}
+                        };
+                    }
+                    const driverData = drivers[driver];
+                    driverData.totalPoints += data.eventPoints || 0;
+                    driverData.totalPowerStagePoints += data.powerStagePoints || 0;
+                    driverData.totalTime += data.totalTime;
+                    driverData.eventPoints[eventFolder] = data.eventPoints || 0;
+                    driverData.eventPSPoints[eventFolder] = data.powerStagePoints || 0;
+                }
+            }
+
+            const sortedDrivers = Object.values(drivers).sort((a, b) => b.totalPoints - a.totalPoints);
+
+            const tableHeader = document.getElementById("table-header");
+            Object.keys(events).forEach(event => {
+                const eventColumn = document.createElement("th");
+                eventColumn.textContent = `Points (${event})`;
+                tableHeader.appendChild(eventColumn);
+
+                const psColumn = document.createElement("th");
+                psColumn.textContent = `PS Points (${event})`;
+                tableHeader.appendChild(psColumn);
+            });
+
+            const tbody = document.querySelector("#standings tbody");
+            sortedDrivers.forEach((driver, index) => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td class="driver">${driver.driver}</td>
+                    ${Object.keys(events).map(event => `
+                        <td>${driver.eventPoints[event] || "-"}</td>
+                        <td>${driver.eventPSPoints[event] || "-"}</td>
+                    `).join("")}
+                    <td>${driver.totalPoints}</td>
+                    <td>${formatSecondsToTime(driver.totalTime)}</td>
+                    <td>${formatTimeDiff(driver.totalTime - sortedDrivers[0].totalTime)}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        generateOverallStandings();
+    </script>
+</body>
+</html>
